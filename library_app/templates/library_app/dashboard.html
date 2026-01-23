@@ -1,0 +1,359 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | UCC Library</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary-green: #0B3D2E;
+            --light-bg: #f8f9fa;
+            --text-dark: #343a40;
+            --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background-color: #0B3D2E;
+            height: 100vh; color: white; box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            position: fixed; top: 0; bottom: 0; left: 0; z-index: 100;
+            width: 250px; overflow-y: auto; display: flex; flex-direction: column;
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .nav-link {
+            color: rgba(255,255,255,0.85); margin-bottom: 8px; padding: 12px 15px; border-radius: 8px;
+            transition: all 0.3s ease; font-size: 0.95rem; white-space: nowrap;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.15); transform: translateX(5px); }
+        .nav-link.active { background-color: white; color: #0B3D2E; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .sidebar-logo { max-width: 80px; margin-bottom: 15px; border: 3px solid rgba(255,255,255,0.2); border-radius: 50%; padding: 5px; }
+
+        /* MAIN CONTENT */
+        .main-content { margin-left: 250px; padding: 50px 30px 30px 30px; width: calc(100% - 250px); }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; align-items: center; }
+            .sidebar .nav-link span, .sidebar .sidebar-heading { display: none; }
+            .sidebar-logo { width: 40px; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); }
+        }
+
+        /* CARDS */
+        .stat-card { border: none; border-radius: 20px; background: white; box-shadow: var(--card-shadow); transition: transform 0.3s ease; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .icon-box { width: 60px; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; }
+
+        .content-card { background: white; border-radius: 20px; border: none; box-shadow: var(--card-shadow); height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #eee; background: white; }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: var(--primary-green); margin: 0; text-transform: uppercase; }
+
+        /* TABLES */
+        .table thead th { background: #f8f9fa; color: #6c757d; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; padding: 12px 15px; border: none; }
+        .table tbody td { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; font-size: 0.9rem; }
+        .badge-custom { padding: 5px 10px; border-radius: 50px; font-weight: 600; font-size: 0.7rem; }
+
+        /* PREVENT TEXT WRAPPING */
+        .no-wrap-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .compact-col { width: 1%; white-space: nowrap; } /* Forces column to be as small as content */
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+
+    <div class="sidebar p-3">
+        <div class="text-center mb-4 mt-2">
+            <img src="{% static 'ucc_logo.png' %}" alt="Logo" class="sidebar-logo">
+            <h5 class="fw-bold m-0 sidebar-heading" style="font-size: 1rem; letter-spacing: 1px;">UCC LIBRARY</h5>
+            <small class="text-white-50">Attendance System</small>
+        </div>
+
+        <nav class="nav flex-column flex-grow-1">
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mb-2 sidebar-heading" style="font-size: 0.75rem;">Core Menu</div>
+            <a class="nav-link active" href="{% url 'dashboard' %}"><i class="fas fa-chart-pie me-3"></i> <span>Dashboard</span></a>
+            <a class="nav-link" href="{% url 'landing_page' %}"><i class="fas fa-qrcode me-3"></i> <span>Scanner Mode</span></a>
+            <a class="nav-link" href="{% url 'manual_checkin' %}"><i class="fas fa-keyboard me-3"></i> <span>Manual Entry</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Management</div>
+            <a class="nav-link" href="{% url 'patron_list' %}"><i class="fas fa-users me-3"></i> <span>User List</span></a>
+            <a class="nav-link" href="{% url 'add_patron' %}"><i class="fas fa-user-plus me-3"></i> <span>Register User</span></a>
+            <a class="nav-link" href="{% url 'bulk_import' %}"><i class="fas fa-file-csv me-3"></i> <span>Bulk Import</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Reports</div>
+            <a class="nav-link" href="{% url 'report_selection' %}"><i class="fas fa-file-alt me-3"></i> <span>Print Reports</span></a>
+            <a class="nav-link" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
+        </nav>
+
+        <div class="mt-4 pb-4 border-top border-secondary pt-3">
+            <a class="nav-link text-danger fw-bold" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-3"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="fw-bold text-dark mb-1">Hello, {{ request.user.first_name|default:"Admin" }}! </h1>
+                <p class="text-muted mb-0">Overview for <strong>{% now "l, F j, Y" %}</strong></p>
+            </div>
+
+            <form method="get" class="d-flex gap-3 align-items-center mt-3 mt-md-0">
+                <select name="department" class="form-select" onchange="this.form.submit()" style="min-width: 150px;">
+                    <option value="">All Departments</option>
+                    {% for code, name in departments %}
+                        <option value="{{ code }}" {% if selected_dept == code %}selected{% endif %}>{{ code }}</option>
+                    {% endfor %}
+                </select>
+                <select name="month" class="form-select" onchange="this.form.submit()" style="min-width: 150px;">
+                    <option value="">Yearly View</option>
+                    {% for num, name in month_choices %}
+                        <option value="{{ num }}" {% if selected_month == num %}selected{% endif %}>
+                            {{ name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 d-flex align-items-center">
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary me-4"><i class="fas fa-fingerprint"></i></div>
+                    <div><p class="text-uppercase text-muted fw-bold small mb-1">Today's Visit</p><h2 class="fw-bold mb-0 text-dark">{{ daily_count }}</h2></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 d-flex align-items-center">
+                    <div class="icon-box bg-success bg-opacity-10 text-success me-4"><i class="fas fa-user-check"></i></div>
+                    <div><p class="text-uppercase text-muted fw-bold small mb-1">Checked-In</p><h2 class="fw-bold mb-0 text-dark">{{ checked_in_count }}</h2></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card p-4 h-100 d-flex align-items-center">
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning me-4"><i class="fas fa-walking"></i></div>
+                    <div><p class="text-uppercase text-muted fw-bold small mb-1">Checked-Out</p><h2 class="fw-bold mb-0 text-dark">{{ checked_out_count }}</h2></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <div class="card-header-custom d-flex justify-content-between">
+                        <h5 class="section-title">Attendance Trends</h5>
+                        <small class="text-muted">{{ current_year }}</small>
+                    </div>
+                    <div class="p-4" style="height: 300px;">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-header-custom">
+                        <h5 class="section-title">Visits by Dept</h5>
+                    </div>
+                    <div class="p-4 d-flex justify-content-center align-items-center" style="height: 300px;">
+                        <canvas id="deptPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-header-custom border-bottom-0 pb-0">
+                        <h5 class="section-title text-success"></i> Top 5 Visitors</h5>
+                        <p class="text-muted small mt-1">Most frequent visits</p>
+                    </div>
+                    <div class="table-responsive p-2">
+                        <table class="table table-hover">
+                            <tbody>
+                                {% for s in top_visits %}
+                                <tr>
+                                    <td class="compact-col text-center text-muted fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark no-wrap-text" style="font-size: 0.9rem;">{{ s.patron__first_name }} {{ s.patron__last_name }}</div>
+                                        <div class="small text-muted no-wrap-text" style="font-size: 0.75rem;">{{ s.patron__department|default:"-" }}</div>
+                                    </td>
+                                    <td class="text-end fw-bold text-success compact-col">{{ s.visit_count }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No data yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-header-custom border-bottom-0 pb-0">
+                        <h5 class="section-title text-warning"></i> Top 5 Study Leaders</h5>
+                        <p class="text-muted small mt-1">Total time spent inside</p>
+                    </div>
+                    <div class="table-responsive p-2">
+                        <table class="table table-hover">
+                            <tbody>
+                                {% for s in top_time_spent %}
+                                <tr>
+                                    <td class="compact-col text-center text-muted fw-bold">{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark no-wrap-text" style="font-size: 0.9rem;">{{ s.name }}</div>
+                                        <div class="small text-muted no-wrap-text" style="font-size: 0.75rem;">{{ s.dept|default:"-" }}</div>
+                                    </td>
+                                    <td class="text-end fw-bold text-warning compact-col no-wrap-text">{{ s.time_str }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No data yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="content-card">
+                    <div class="card-header-custom border-bottom-0 pb-0">
+                        <h5 class="section-title text-primary"></i> Recent Activity (Last 5)</h5>
+                        <p class="text-muted small mt-1">Real-time In & Out logs</p>
+                    </div>
+                    <div class="table-responsive p-2">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="padding-left: 10px;">Name</th>
+                                    <th>Status</th>
+                                    <th class="text-end" style="padding-right: 10px;">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in recent_logs %}
+                                <tr>
+                                    <td style="padding-left: 10px; max-width: 140px;" class="no-wrap-text">
+                                        <div class="fw-bold text-dark no-wrap-text" style="font-size: 0.9rem;">
+                                            {{ event.patron.first_name }} {{ event.patron.last_name }}
+                                        </div>
+                                        <div class="small text-muted no-wrap-text" style="font-size: 0.75rem;">
+                                            {{ event.role|capfirst }}
+                                        </div>
+                                    </td>
+                                    <td class="compact-col">
+                                        {% if event.status == 'IN' %}
+                                            <span class="badge badge-custom bg-success bg-opacity-10 text-success"><i class="fas fa-arrow-right me-1"></i> IN</span>
+                                        {% else %}
+                                            <span class="badge badge-custom bg-danger bg-opacity-10 text-danger"><i class="fas fa-arrow-left me-1"></i> OUT</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end text-muted fw-bold compact-col no-wrap-text" style="padding-right: 10px; font-size: 0.85rem;">
+                                        {{ event.time|date:"h:i A" }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-center text-muted py-4">No activity yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        // 1. MAIN CHART
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+
+        // Define fill color variable
+        let fillColor;
+        let isMonthly = "{{ selected_month|yesno:'true,false' }}" === "true";
+
+        if (isMonthly) {
+            // Solid Green for Bar Chart
+            fillColor = '#2ecc71';
+        } else {
+            // Solid Green with Transparency for Line Chart
+            // We avoid gradient logic to prevent the "Black Fill" bug
+            fillColor = 'rgba(46, 204, 113, 0.2)';
+        }
+
+        new Chart(ctx, {
+            type: isMonthly ? 'bar' : 'line',
+            data: {
+                labels: {{ chart_labels|safe }},
+                datasets: [{
+                    label: 'Attendance',
+                    data: {{ chart_data|safe }},
+                    backgroundColor: fillColor,
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#2ecc71',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: {weight: 'bold'} } },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 2. PIE CHART
+        const pieCtx = document.getElementById('deptPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ pie_labels|safe }},
+                datasets: [{
+                    data: {{ pie_data|safe }},
+                    backgroundColor: ['#2ecc71', '#0B3D2E', '#ffc107', '#0d6efd', '#dc3545', '#6610f2'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { position: 'right', labels: { boxWidth: 12 } } }
+            }
+        });
+    });
+
+    // Auto-refresh the page every 10 seconds to show new scans
+    setTimeout(function(){
+       window.location.reload();
+    }, 10000);
+</script>
+
+</body>
+</html>

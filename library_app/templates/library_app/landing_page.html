@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCC Library Scan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        :root {
+            --primary-green: #0B3D2E;
+            --accent-white: #FFFFFF;
+        }
+
+        body {
+            background-color: var(--primary-green);
+            color: var(--accent-white);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh; /* Allow scrolling if screen is too small */
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 1. LAYOUT CONTAINER (Prevents Overlap) */
+        .main-layout {
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Adds space between every element */
+        }
+
+        .scan-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        #clock { font-size: 2.5rem; font-weight: 300; letter-spacing: 2px; line-height: 1; }
+        #date-display { font-size: 1rem; opacity: 0.8; margin-bottom: 10px; }
+
+        /* Camera Window */
+        #reader {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* Result Card (Hidden by default) */
+        #result-card {
+            display: none;
+            background: white;
+            color: var(--primary-green);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        /* Logo Sizing */
+        .header-logo { width: 100px; height: auto; margin-bottom: 5px; }
+        .system-title { font-size: 1.5rem; font-weight: 600; margin: 0; }
+
+        /* Login Button (Top Right) */
+        .top-login { position: absolute; top: 20px; right: 20px; }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-login">
+        <a href="{% url 'login' %}" class="btn btn-sm btn-outline-light rounded-pill px-3">Staff Login</a>
+    </div>
+
+    <div class="main-layout">
+
+        <div>
+            <img src="{% static 'ucc_logo.png' %}" alt="UCC Logo" class="header-logo">
+            <h1 class="system-title">UCC Library Attendance</h1>
+        </div>
+
+        <div>
+            <div id="clock">00:00:00</div>
+            <div id="date-display">Loading date...</div>
+        </div>
+
+        <div class="scan-container">
+
+            <div id="scan-mode">
+                <h5 class="mb-3 text-white-50">Scan ID to Enter/Exit</h5>
+                <div id="reader"></div>
+            </div>
+
+            <div id="result-card">
+                <div class="role-badge" id="status-badge"></div>
+
+                <h2 class="fw-bold display-6" id="student-name">--</h2>
+                <p class="h5 text-muted mb-4" id="student-id">--</p>
+
+                <h4 id="custom-message" class="fw-bold mb-3"></h4>
+
+                <div class="small text-muted border-top pt-3">
+                    Logged at <span id="scan-time">--</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <audio id="scan-sound" src="https://www.soundjay.com/buttons/sounds/beep-07.mp3"></audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- 1. CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', { hour12: true });
+            document.getElementById('date-display').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 2. SCANNER LOGIC ---
+        const scanSound = document.getElementById('scan-sound');
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", {
+            fps: 15,
+            qrbox: 250,
+            videoConstraints: { facingMode: "environment" }
+        });
+
+        let isScanning = false;
+
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isScanning) return;
+            isScanning = true;
+
+            // 1. PLAY BEEP
+            scanSound.play().catch(e => console.log("Audio play failed (browser policy):", e));
+
+            fetch('/scan/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ 'qr_code': decodedText })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResult(data);
+                } else {
+                    alert("ID Not Found: " + decodedText);
+                    isScanning = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                isScanning = false;
+            });
+        }
+
+        function showResult(data) {
+            // Elements
+            const resultCard = document.getElementById('result-card');
+            const scanMode = document.getElementById('scan-mode');
+            const statusBadge = document.getElementById('status-badge');
+            const customMsg = document.getElementById('custom-message');
+
+            // Set Data
+            document.getElementById('student-name').textContent = data.name;
+            document.getElementById('student-id').textContent = data.id;
+            document.getElementById('scan-time').textContent = data.time;
+
+            // --- CUSTOM MESSAGE LOGIC ---
+            if (data.type === 'in') {
+                // CHECK IN
+                statusBadge.textContent = "CHECKED IN";
+                statusBadge.style.backgroundColor = "#198754"; // Green
+                statusBadge.style.color = "white";
+                customMsg.textContent = "Welcome to the Library!";
+                customMsg.style.color = "#198754";
+            } else {
+                // CHECK OUT
+                statusBadge.textContent = "CHECKED OUT";
+                statusBadge.style.backgroundColor = "#dc3545"; // Red
+                statusBadge.style.color = "white";
+                customMsg.textContent = "Thank you, Come Again!";
+                customMsg.style.color = "#dc3545";
+            }
+
+            // Swap View
+            scanMode.style.display = 'none';
+            resultCard.style.display = 'block';
+
+            // Hold for 3 seconds, then reset
+            setTimeout(() => {
+                resultCard.style.display = 'none';
+                scanMode.style.display = 'block';
+                isScanning = false; // Unlock
+            }, 3000);
+        }
+
+        // Start Camera
+        html5QrcodeScanner.render(onScanSuccess);
+
+    </script>
+</body>
+</html>

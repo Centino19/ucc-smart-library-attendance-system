@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Library Report</title>
+    <style>
+        @page {
+            size: letter landscape; /* Landscape is better for wide tables */
+            margin: 1cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+        }
+        .header-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0B3D2E;
+        }
+        .logo {
+            width: 80px;
+            height: auto;
+        }
+        .title-section {
+            text-align: center;
+            color: #0B3D2E;
+        }
+        h1 { margin: 0; font-size: 18pt; }
+        h2 { margin: 5px 0; font-size: 14pt; font-weight: normal; }
+
+        /* Data Table Styling */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: center;
+        }
+        .data-table th {
+            background-color: #0B3D2E;
+            color: white;
+            font-weight: bold;
+        }
+        .dept-header {
+            background-color: #f2f2f2;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 8px;
+        }
+        .prog-name {
+            text-align: left;
+            width: 250px;
+        }
+        .total-col {
+            font-weight: bold;
+            background-color: #e6f7e6;
+        }
+    </style>
+</head>
+<body>
+
+    <table class="header-table">
+        <tr>
+            <td style="width: 100px;">
+                {% load static %}
+                <img src="{% static 'ucc_logo.png' %}" class="logo" alt="Logo">
+            </td>
+            <td class="title-section">
+                <h1>UNION CHRISTIAN COLLEGE</h1>
+                <h2>Library Attendance Summary</h2>
+                <h3>{{ display_name }}</h3>
+            </td>
+        </tr>
+    </table>
+
+    {% for dept_code, dept_programs in report_data.items %}
+
+        {% if dept_programs %}
+            <div class="dept-header">
+                Department:
+                {% for k, v in departments.items %}
+                    {% if k == dept_code %}{{ v }}{% endif %}
+                {% endfor %}
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Program / Course</th>
+                        {% for m in month_names %}
+                            <th>{{ m }}</th>
+                        {% endfor %}
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prog_name, counts in dept_programs.items %}
+                    <tr>
+                        <td class="prog-name">{{ prog_name }}</td>
+
+                        {% for count in counts %}
+                            <td {% if forloop.last %}class="total-col"{% endif %}>
+                                {{ count }}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+    {% endfor %}
+
+</body>
+</html>

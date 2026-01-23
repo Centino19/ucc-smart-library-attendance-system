@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate Report | UCC Library</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #0B3D2E;
+            --light-bg: #f8f9fa;
+            --text-dark: #343a40;
+            --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* SIDEBAR STYLES (Fixed) */
+        .sidebar {
+            background-color: #0B3D2E;
+            height: 100vh;
+            color: white;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0; bottom: 0; left: 0;
+            z-index: 100;
+            width: 250px;
+            overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .nav-link {
+            color: rgba(255,255,255,0.85); margin-bottom: 8px; padding: 12px 15px; border-radius: 8px;
+            transition: all 0.3s ease; font-size: 0.95rem; white-space: nowrap;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.15); transform: translateX(5px); }
+        .nav-link.active { background-color: white; color: #0B3D2E; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        .sidebar-logo { max-width: 80px; margin-bottom: 15px; border: 3px solid rgba(255,255,255,0.2); border-radius: 50%; padding: 5px; }
+
+        /* MAIN CONTENT - CENTERED LAYOUT */
+        .main-content {
+            margin-left: 250px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; align-items: center; }
+            .sidebar .nav-link span, .sidebar .sidebar-heading { display: none; }
+            .sidebar-logo { width: 40px; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+
+    <div class="sidebar p-3">
+        <div class="text-center mb-4 mt-2">
+            <img src="{% static 'ucc_logo.png' %}" alt="Logo" class="sidebar-logo">
+            <h5 class="fw-bold m-0 sidebar-heading" style="font-size: 1rem; letter-spacing: 1px;">UCC LIBRARY</h5>
+            <small class="text-white-50">Attendance System</small>
+        </div>
+
+        <nav class="nav flex-column flex-grow-1">
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mb-2 sidebar-heading" style="font-size: 0.75rem;">Core Menu</div>
+            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-pie me-3"></i> <span>Dashboard</span></a>
+            <a class="nav-link" href="{% url 'landing_page' %}"><i class="fas fa-qrcode me-3"></i> <span>Scanner Mode</span></a>
+            <a class="nav-link" href="{% url 'manual_checkin' %}"><i class="fas fa-keyboard me-3"></i> <span>Manual Entry</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Management</div>
+            <a class="nav-link" href="{% url 'patron_list' %}"><i class="fas fa-users me-3"></i> <span>User List</span></a>
+            <a class="nav-link" href="{% url 'add_patron' %}"><i class="fas fa-user-plus me-3"></i> <span>Register User</span></a>
+            <a class="nav-link" href="{% url 'bulk_import' %}"><i class="fas fa-file-csv me-3"></i> <span>Bulk Import</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Reports</div>
+            <a class="nav-link active" href="{% url 'report_selection' %}"><i class="fas fa-file-alt me-3"></i> <span>Print Reports</span></a>
+            <a class="nav-link" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
+        </nav>
+
+        <div class="mt-4 pb-4 border-top border-secondary pt-3">
+            <a class="nav-link text-danger fw-bold" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-3"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="w-100" style="max-width: 600px;">
+
+            <div class="card shadow rounded-4 border-0">
+                <div class="card-header text-white py-3 rounded-top-4 text-center" style="background-color: var(--primary-green);">
+                    <h5 class="mb-0 fw-bold"><i class="fas fa-print me-2"></i> Generate Attendance Report</h5>
+                </div>
+
+                <div class="card-body p-5">
+                    <form action="{% url 'print_pdf' %}" method="GET" target="_blank">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">Select Semester</label>
+                            <select name="sem" class="form-select form-select-lg">
+                                <option value="1">1st Semester (Aug - Dec)</option>
+                                <option value="2">2nd Semester (Dec - May)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-bold text-muted">Academic Year Start</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="fas fa-calendar-alt text-muted"></i></span>
+                                <input type="number" name="year" class="form-control form-control-lg" value="2025" min="2020" max="2030">
+                            </div>
+                            <div class="form-text mt-2 ms-1"><i class="fas fa-info-circle me-1"></i> Example: Enter <strong>2025</strong> for School Year 2025-2026.</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-lg text-white fw-bold py-3" style="background-color: var(--primary-green);">
+                                <i class="fas fa-file-pdf me-2"></i> Generate PDF Report
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

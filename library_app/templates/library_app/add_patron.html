@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register User | UCC Library</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #0B3D2E;
+            --light-bg: #f8f9fa;
+            --text-dark: #343a40;
+            --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        body {
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* SIDEBAR STYLES (Fixed) */
+        .sidebar {
+            background-color: #0B3D2E;
+            height: 100vh;
+            color: white;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0; bottom: 0; left: 0;
+            z-index: 100;
+            width: 250px;
+            overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .nav-link {
+            color: rgba(255,255,255,0.85); margin-bottom: 8px; padding: 12px 15px; border-radius: 8px;
+            transition: all 0.3s ease; font-size: 0.95rem; white-space: nowrap;
+        }
+        .nav-link:hover { color: white; background: rgba(255,255,255,0.15); transform: translateX(5px); }
+        .nav-link.active { background-color: white; color: #0B3D2E; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        .sidebar-logo { max-width: 80px; margin-bottom: 15px; border: 3px solid rgba(255,255,255,0.2); border-radius: 50%; padding: 5px; }
+
+        /* MAIN CONTENT OFFSET (The Fix) */
+        .main-content {
+            margin-left: 250px; /* Pushes content to the right */
+            padding: 50px;
+            width: calc(100% - 250px);
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 80px; align-items: center; }
+            .sidebar .nav-link span, .sidebar .sidebar-heading { display: none; }
+            .sidebar-logo { width: 40px; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+
+    <div class="sidebar p-3">
+        <div class="text-center mb-4 mt-2">
+            <img src="{% static 'ucc_logo.png' %}" alt="Logo" class="sidebar-logo">
+            <h5 class="fw-bold m-0 sidebar-heading" style="font-size: 1rem; letter-spacing: 1px;">UCC LIBRARY</h5>
+            <small class="text-white-50">Attendance System</small>
+        </div>
+
+        <nav class="nav flex-column flex-grow-1">
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mb-2 sidebar-heading" style="font-size: 0.75rem;">Core Menu</div>
+            <a class="nav-link" href="{% url 'dashboard' %}"><i class="fas fa-chart-pie me-3"></i> <span>Dashboard</span></a>
+            <a class="nav-link" href="{% url 'landing_page' %}"><i class="fas fa-qrcode me-3"></i> <span>Scanner Mode</span></a>
+            <a class="nav-link" href="{% url 'manual_checkin' %}"><i class="fas fa-keyboard me-3"></i> <span>Manual Entry</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Management</div>
+            <a class="nav-link" href="{% url 'patron_list' %}"><i class="fas fa-users me-3"></i> <span>User List</span></a>
+            <a class="nav-link active" href="{% url 'add_patron' %}"><i class="fas fa-user-plus me-3"></i> <span>Register User</span></a>
+            <a class="nav-link" href="{% url 'bulk_import' %}"><i class="fas fa-file-csv me-3"></i> <span>Bulk Import</span></a>
+
+            <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Reports</div>
+            <a class="nav-link" href="{% url 'report_selection' %}"><i class="fas fa-file-alt me-3"></i> <span>Print Reports</span></a>
+            <a class="nav-link" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
+        </nav>
+
+        <div class="mt-4 pb-4 border-top border-secondary pt-3">
+            <a class="nav-link text-danger fw-bold" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-3"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> <strong>{{ message }}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card shadow rounded-4 border-0" style="max-width: 800px; margin: 0 auto;">
+            <div class="card-header text-white text-center py-3 rounded-top-4" style="background-color: var(--primary-green);">
+                <h4 class="mb-0 fw-bold">Register New User</h4>
+            </div>
+            <div class="card-body p-4">
+
+                <form method="POST" action="{% url 'add_patron' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Select User Type</label>
+                        <select name="role" id="roleSelector" class="form-select form-select-lg" onchange="toggleRole()">
+                            <option value="student" selected>Student</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label id="idLabel" class="form-label">ID Number</label>
+                            <input type="text" name="id_number" id="idInput" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="user@example.com">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="first_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Middle Name</label>
+                            <input type="text" name="middle_name" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="deptRow">
+                        <label class="form-label">Department</label>
+                        <select name="department" id="deptSelect" class="form-select" onchange="updatePrograms()">
+                            <option value=""> Select Department </option>
+                            <option value="SBS">School of Business Sciences (SBS)</option>
+                            <option value="SEAS">School of Education, Arts, and Sciences (SEAS)</option>
+                            <option value="SHES">School of Health and Education Sciences (SHES)</option>
+                            <option value="BES">Basic Education School (BES)</option>
+                            <option value="GS">Graduate School</option>
+                        </select>
+                    </div>
+
+                    <div class="row mb-4" id="studentFields">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Program / Course / Grade</label>
+                            <select name="program" id="programSelect" class="form-select" onchange="checkMajors()">
+                                <option value="">Select Department First </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12 mb-3 d-none" id="majorContainer">
+                            <label class="form-label fw-bold text-success" id="majorLabel">Major / Specialization</label>
+                            <select name="major" id="majorSelect" class="form-select">
+                                <option value="">Select Option </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12" id="yearLevelContainer">
+                            <label class="form-label">Year Level (Optional)</label>
+                            <select name="year_level" class="form-select">
+                                <option value=""> Select Year </option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn w-100 py-3 fw-bold mt-2 text-white" style="background-color: var(--primary-green); border: none; font-size: 1.1rem;">
+                        <i class="fas fa-check-circle me-2"></i> Register User
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const schoolData = {
+        "SBS": [
+            { name: "Bachelor of Science in Computer Science" },
+            { name: "Bachelor of Science in Information Systems" },
+            { name: "Bachelor of Science in Accountancy" },
+            { name: "Bachelor of Science in Business Administration" },
+            { name: "Bachelor of Science in Real Estate Management" }
+        ],
+        "SHES": [
+            { name: "Bachelor of Science in Nursing" }
+        ],
+        "SEAS": [
+            { name: "Bachelor of Arts in English" },
+            { name: "Bachelor of Arts in History" },
+            { name: "Bachelor of Arts in Political Science" },
+            { name: "Bachelor of Early Childhood Education" },
+            { name: "Bachelor of Elementary Education" },
+            { name: "Bachelor of Secondary Education", majors: ["English", "Biological Science", "Filipino", "Mathematics", "Social Studies"] }
+        ],
+        "GS": [
+            { name: "Master of Arts in Education", majors: ["Teacher Education", "Preschool Education"] },
+            { name: "Master of Arts in Nursing", majors: ["Community Health", "Maternal and Child Care"] }
+        ],
+        "BES": [
+            { name: "Nursery" },
+            { name: "Kinder 1" },
+            { name: "Kinder 2" },
+            { name: "Grade 1" }, { name: "Grade 2" }, { name: "Grade 3" }, { name: "Grade 4" },
+            { name: "Grade 5" }, { name: "Grade 6" }, { name: "Grade 7" }, { name: "Grade 8" },
+            { name: "Grade 9" }, { name: "Grade 10" },
+            { name: "Grade 11", majors: ["Academic Track: ABM", "Academic Track: GAS", "Academic Track: HUMSS", "Academic Track: STEM"] },
+            { name: "Grade 12", majors: ["Academic Track: ABM", "Academic Track: GAS", "Academic Track: HUMSS", "Academic Track: STEM"] }
+        ]
+    };
+
+    function updatePrograms() {
+        const dept = document.getElementById("deptSelect").value;
+        const programSelect = document.getElementById("programSelect");
+        const majorContainer = document.getElementById("majorContainer");
+        const majorSelect = document.getElementById("majorSelect");
+        const yearLevelContainer = document.getElementById("yearLevelContainer");
+
+        programSelect.innerHTML = '<option value=""> Select Program </option>';
+        majorContainer.classList.add('d-none');
+        majorSelect.required = false;
+
+        if (dept === "BES") {
+            yearLevelContainer.classList.add("d-none");
+        } else {
+            yearLevelContainer.classList.remove("d-none");
+        }
+
+        if (dept && schoolData[dept]) {
+            schoolData[dept].forEach(prog => {
+                let option = document.createElement("option");
+                option.value = prog.name;
+                option.textContent = prog.name;
+                if (prog.majors) {
+                    option.setAttribute("data-majors", JSON.stringify(prog.majors));
+                }
+                programSelect.appendChild(option);
+            });
+        }
+    }
+
+    function checkMajors() {
+        const programSelect = document.getElementById("programSelect");
+        const majorContainer = document.getElementById("majorContainer");
+        const majorSelect = document.getElementById("majorSelect");
+        const majorLabel = document.getElementById("majorLabel");
+
+        const selectedOption = programSelect.options[programSelect.selectedIndex];
+        const majorsData = selectedOption.getAttribute("data-majors");
+
+        majorSelect.innerHTML = '<option value=""> Select Option </option>';
+
+        if (majorsData) {
+            const majors = JSON.parse(majorsData);
+            majors.forEach(m => {
+                let option = document.createElement("option");
+                option.value = m;
+                option.textContent = m;
+                majorSelect.appendChild(option);
+            });
+
+            if (selectedOption.value.includes("Grade")) {
+                majorLabel.textContent = "Select Track / Strand";
+            } else {
+                majorLabel.textContent = "Select Major";
+            }
+
+            majorContainer.classList.remove("d-none");
+            majorSelect.required = true;
+        } else {
+            majorContainer.classList.add("d-none");
+            majorSelect.required = false;
+        }
+    }
+
+    function toggleRole() {
+        const role = document.getElementById('roleSelector').value;
+        const idLabel = document.getElementById('idLabel');
+        const idInput = document.getElementById('idInput');
+        const deptRow = document.getElementById('deptRow');
+        const studentFields = document.getElementById('studentFields');
+        const majorSelect = document.getElementById("majorSelect");
+
+        deptRow.classList.remove('d-none');
+        studentFields.classList.remove('d-none');
+        idInput.required = true;
+
+        if (role === 'student') {
+            idLabel.innerText = "ID Number";
+        } else if (role === 'faculty') {
+            idLabel.innerText = "Employee Number";
+            studentFields.classList.add('d-none');
+            majorSelect.required = false; 
+        } else if (role === 'guest') {
+            idLabel.innerText = "ID Number (Optional)";
+            idInput.required = false;
+            deptRow.classList.add('d-none');
+            studentFields.classList.add('d-none');
+            majorSelect.required = false; 
+        }
+    }
+</script>
+
+</body>
+</html>
