@@ -1,4 +1,4 @@
-# 📚 Library Attendance System
+# Library Attendance System
 
 A comprehensive web-based application designed to streamline library attendance tracking using QR code technology. Built with Django, this system allows for real-time monitoring of library usage, automated reporting, and efficient patron management.
 
