@@ -38,14 +38,20 @@ Once configured, run:
 
    python manage.py migrate
 
-=== STEP 5: CREATE ADMIN ACCOUNT ===
+=== STEP 5: PREPARE STATIC FILES ===
+To ensure logos and styles load correctly in production:
+
+   python manage.py collectstatic
+   (Type 'yes' if asked to overwrite).
+
+=== STEP 6: CREATE ADMIN ACCOUNT ===
 To access the dashboard, you need an admin account:
 
    python manage.py createsuperuser
 
 (Enter a username and password when prompted. You can skip the email).
 
-=== STEP 6: CONFIGURE EMAIL (OPTIONAL) ===
+=== STEP 7: CONFIGURE EMAIL (OPTIONAL) ===
 If you want the system to send QR codes via email:
 1. Open `library_project/settings.py`.
 2. Scroll to the bottom to find `EMAIL_HOST_PASSWORD`.
@@ -53,7 +59,7 @@ If you want the system to send QR codes via email:
    (Note: You need 2-Step Verification enabled on Google to generate an App Password).
 4. Update `EMAIL_HOST_USER` with your Gmail address.
 
-=== STEP 7: RUN THE SYSTEM ===
+=== STEP 8: RUN THE SYSTEM ===
 You have two ways to run the system:
 
 Option A: Production Mode (Recommended for Library)
@@ -62,7 +68,7 @@ Option A: Production Mode (Recommended for Library)
 Option B: Development Mode
    python manage.py runserver
 
-=== STEP 8: ENABLE CAMERA (NGROK) ===
+=== STEP 9: ENABLE CAMERA (NGROK) ===
 To make the camera work on phones and other laptops:
 
 1. Download Ngrok (https://ngrok.com/download) and put `ngrok.exe` in this folder.
@@ -72,7 +78,7 @@ To make the camera work on phones and other laptops:
 4. Copy the link ending in `.ngrok-free.app` (e.g., https://a1b2.ngrok-free.app).
 5. Use that link on any device to access the system with camera support.
 
-=== STEP 9: ACCESS ===
+=== STEP 10: ACCESS ===
 1. Open your browser.
 2. Go to: http://127.0.0.1:8000/ (or your Ngrok link)
 3. Login with the superuser account you created in Step 5.
