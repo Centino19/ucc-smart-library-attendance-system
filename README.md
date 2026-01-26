@@ -8,6 +8,7 @@ A comprehensive web-based application designed to streamline library attendance 
 *   **QR Code Scanning:** Fast check-in and check-out using a webcam or barcode scanner.
 *   **Real-Time Dashboard:** Live statistics on daily visits, current occupancy, and historical trends using interactive charts (Chart.js).
 *   **Manual Entry:** Fallback option to manually input ID numbers if scanning fails.
+*   **Remote Access:** Supports Ngrok tunneling for secure HTTPS access on mobile devices.
 
 ### 🔹 User Management
 *   **User Database:** Manage student and faculty records (Add, Edit, Delete).
@@ -25,7 +26,7 @@ A comprehensive web-based application designed to streamline library attendance 
 *   **Backend:** Python, Django 6.0
 *   **Frontend:** HTML5, CSS3, Bootstrap 5, JavaScript
 *   **Charts:** Chart.js
-*   **Database:** SQLite (Default)
+*   **Database:** PostgreSQL (Production) / SQLite (Dev)
 *   **PDF Generation:** xhtml2pdf
 *   **QR Processing:** qrcode, Pillow
 

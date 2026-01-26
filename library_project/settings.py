@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import socket
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,8 +34,21 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     # You will add your AWS Public IP here later, e.g., 'http://54.234.12.34:8000'
+    'https://*.ngrok-free.app',
+    'https://*.ngrok-free.dev',
+    'https://*.ngrok.io',
 ]
 
+# DYNAMICALLY ADD LOCAL IP TO TRUSTED ORIGINS (Fix for 403 Forbidden)
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    local_ip = s.getsockname()[0]
+    s.close()
+    CSRF_TRUSTED_ORIGINS.append(f'http://{local_ip}:8000')
+    CSRF_TRUSTED_ORIGINS.append(f'https://{local_ip}:8000')
+except Exception:
+    pass
 
 # Application definition
 
@@ -46,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'library_app',
+    'sslserver',
 ]
 
 MIDDLEWARE = [
@@ -84,11 +99,15 @@ WSGI_APPLICATION = 'library_project.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+     'default': {
+         'ENGINE': 'django.db.backends.postgresql',
+         'NAME': 'library_db',       # The name you gave in pgAdmin
+         'USER': 'postgres',         # Default username
+         'PASSWORD': '1234',# The password you set during installation
+         'HOST': 'localhost',
+         'PORT': '5432',
+     }
+ }
 
 
 # Password validation
