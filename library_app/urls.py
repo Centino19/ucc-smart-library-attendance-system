@@ -12,10 +12,12 @@ urlpatterns = [
     path('patrons/', views.patron_list, name='patron_list'),
     path('add-patron/', views.add_patron, name='add_patron'),
     path('bulk-import/', views.bulk_import, name='bulk_import'),
+    path('export-patrons/', views.export_patrons_csv, name='export_patrons_csv'),
     path('patrons/<str:id_number>/', views.patron_detail, name='patron_detail'),
     path('update-patron/<str:id_number>/', views.update_patron, name='update_patron'),
     path('delete-patron/<str:id_number>/', views.delete_patron, name='delete_patron'),
     path('generate-qr/<str:id_number>/', views.generate_qr, name='generate_qr'),
+    path('resend-qr/<str:id_number>/', views.resend_qr, name='resend_qr'),
 
     # --- Attendance & History ---
     path('manual-checkin/', views.manual_checkin, name='manual_checkin'),

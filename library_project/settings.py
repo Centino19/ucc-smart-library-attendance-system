@@ -159,5 +159,5 @@ EMAIL_USE_TLS = True
 
 # REPLACE WITH YOUR REAL INFO
 EMAIL_HOST_USER = 'vfaustino475@gmail.com'  # <--- Put your actual Gmail address here
-EMAIL_HOST_PASSWORD = 'REPLACE_WITH_APP_PASSWORD'      # <--- Paste the 16-char App Password here (spaces don't matter)
+EMAIL_HOST_PASSWORD = 'dsnz axgc ghek kgpp'      # <--- Paste the 16-char App Password here (spaces don't matter)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

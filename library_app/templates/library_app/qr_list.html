@@ -106,6 +106,15 @@
     </div>
 
     <div class="main-content">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                    <i class="fas fa-info-circle me-2"></i> <strong>{{ message }}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
         <h2 class="fw-bold text-dark mb-4">Registered Users List</h2>
 
         <div class="card p-4 mb-4 border-0 shadow-sm rounded-4">
@@ -212,16 +221,21 @@
                                         <a href="{% url 'patron_detail' patron.id_number %}" class="btn btn-sm btn-outline-dark rounded-pill px-3" title="View QR Code">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        <a href="javascript:void(0);" onclick="confirmResend('{{ patron.id_number }}', '{{ patron.email|default_if_none:""|escapejs }}')" class="btn btn-sm btn-outline-warning rounded-pill px-3" title="Resend QR Email">
+                                            <i class="fas fa-envelope"></i>
+                                        </a>
                                         <button type="button"
                                             class="btn btn-sm btn-outline-primary rounded-pill px-3"
                                             data-id="{{ patron.id_number }}"
                                             data-firstname="{{ patron.first_name }}"
                                             data-middlename="{{ patron.middle_name }}"
                                             data-lastname="{{ patron.last_name }}"
-                                            data-program="{{ patron.program }}"
+                                            data-email="{{ patron.email|default:'' }}"
+                                            data-program="{{ patron.program|default:'' }}"
                                             data-role="{{ patron.role }}"
                                             data-department="{{ patron.department }}"
-                                            data-yearlevel="{{ patron.year_level }}"
+                                            data-yearlevel="{{ patron.year_level|default:'' }}"
+                                            data-major="{{ patron.major|default:'' }}"
                                             onclick="openEditModal(this)"
                                             title="Edit">
                                             <i class="fas fa-pen"></i>
@@ -259,7 +273,21 @@
 
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">ID Number</label>
-                        <input type="text" class="form-control" id="modal_id_number" name="id_number" readonly>
+                        <input type="text" class="form-control" id="modal_id_number" name="id_number" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Email Address</label>
+                        <input type="email" class="form-control" id="modal_email" name="email" placeholder="user@example.com">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Role</label>
+                        <select class="form-select" id="modal_role" name="role" onchange="toggleModalRole()">
+                            <option value="student">Student</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="guest">Guest</option>
+                        </select>
                     </div>
 
                     <div class="row g-2 mb-3">
@@ -278,30 +306,37 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label text-muted small fw-bold">Program / Course</label>
-                            <input type="text" class="form-control" id="modal_program" name="program">
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4" id="modal_dept_col">
                             <label class="form-label text-muted small fw-bold">Department</label>
-                            <select class="form-select" id="modal_department" name="department">
+                            <select class="form-select" id="modal_department" name="department" onchange="updateModalPrograms()">
+                                <option value="">Select Department</option>
                                 {% for code, name in departments %}
                                     <option value="{{ code }}">{{ name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4" id="modal_prog_col">
+                            <label class="form-label text-muted small fw-bold">Program / Course</label>
+                            <select class="form-select" id="modal_program" name="program" onchange="checkModalMajors()">
+                                <option value="">Select Department First</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" id="modal_year_level_container">
                             <label class="form-label text-muted small fw-bold">Year Level</label>
-                            <input type="text" class="form-control" id="modal_year_level" name="year_level" placeholder="e.g. 1st Year">
+                            <select class="form-select" id="modal_year_level" name="year_level">
+                                <option value="">Select Year</option>
+                                <option value="1st Year">1st Year</option>
+                                <option value="2nd Year">2nd Year</option>
+                                <option value="3rd Year">3rd Year</option>
+                                <option value="4th Year">4th Year</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Role</label>
-                        <select class="form-select" id="modal_role" name="role">
-                            <option value="student">Student</option>
-                            <option value="faculty">Faculty</option>
-                            <option value="guest">Guest</option>
+                    <div class="mb-3 d-none" id="modal_major_container">
+                        <label class="form-label text-muted small fw-bold" id="modal_major_label">Major / Strand</label>
+                        <select class="form-select" id="modal_major" name="major">
+                            <option value="">Select Option</option>
                         </select>
                     </div>
                 </form>
@@ -320,29 +355,39 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // 1. MASTER DATA
+// Updated to match add_patron.html structure with Majors/Strands
 const schoolData = {
     "SBS": [
-        "Bachelor of Science in Computer Science",
-        "Bachelor of Science in Information Systems",
-        "Bachelor of Science in Accountancy",
-        "Bachelor of Science in Business Administration",
-        "Bachelor of Science in Real Estate Management"
+        { name: "Bachelor of Science in Computer Science" },
+        { name: "Bachelor of Science in Information Systems" },
+        { name: "Bachelor of Science in Accountancy" },
+        { name: "Bachelor of Science in Business Administration" },
+        { name: "Bachelor of Science in Real Estate Management" }
     ],
-    "SHES": [ "Bachelor of Science in Nursing" ],
+    "SHES": [
+        { name: "Bachelor of Science in Nursing" }
+    ],
     "SEAS": [
-        "Bachelor of Arts in English",
-        "Bachelor of Arts in History",
-        "Bachelor of Arts in Political Science",
-        "Bachelor of Early Childhood Education",
-        "Bachelor of Elementary Education",
-        "Bachelor of Secondary Education"
+        { name: "Bachelor of Arts in English" },
+        { name: "Bachelor of Arts in History" },
+        { name: "Bachelor of Arts in Political Science" },
+        { name: "Bachelor of Early Childhood Education" },
+        { name: "Bachelor of Elementary Education" },
+        { name: "Bachelor of Secondary Education", majors: ["English", "Biological Science", "Filipino", "Mathematics", "Social Studies"] }
     ],
-    "GS": [ "Master of Arts in Education", "Master of Arts in Nursing" ],
+    "GS": [
+        { name: "Master of Arts in Education", majors: ["Teacher Education", "Preschool Education"] },
+        { name: "Master of Arts in Nursing", majors: ["Community Health", "Maternal and Child Care"] }
+    ],
     "BES": [
-        "Nursery", "Kinder 1", "Kinder 2",
-        "Grade 1", "Grade 2", "Grade 3", "Grade 4",
-        "Grade 5", "Grade 6", "Grade 7", "Grade 8",
-        "Grade 9", "Grade 10", "Grade 11", "Grade 12"
+        { name: "Nursery" },
+        { name: "Kinder 1" },
+        { name: "Kinder 2" },
+        { name: "Grade 1" }, { name: "Grade 2" }, { name: "Grade 3" }, { name: "Grade 4" },
+        { name: "Grade 5" }, { name: "Grade 6" }, { name: "Grade 7" }, { name: "Grade 8" },
+        { name: "Grade 9" }, { name: "Grade 10" },
+        { name: "Grade 11", majors: ["Academic Track: ABM", "Academic Track: GAS", "Academic Track: HUMSS", "Academic Track: STEM"] },
+        { name: "Grade 12", majors: ["Academic Track: ABM", "Academic Track: GAS", "Academic Track: HUMSS", "Academic Track: STEM"] }
     ]
 };
 
@@ -357,10 +402,132 @@ function updatePrograms() {
     if (selectedDept && schoolData[selectedDept]) {
         schoolData[selectedDept].forEach(progName => {
             const option = document.createElement("option");
-            option.value = progName;
-            option.textContent = progName;
+            option.value = progName.name; // Access .name property
+            option.textContent = progName.name;
             programSelect.appendChild(option);
         });
+    }
+}
+
+function updateModalPrograms() {
+    const deptSelect = document.getElementById("modal_department");
+    const programSelect = document.getElementById("modal_program");
+    const yearContainer = document.getElementById("modal_year_level_container");
+    const majorContainer = document.getElementById("modal_major_container");
+    const selectedDept = deptSelect.value;
+
+    programSelect.innerHTML = '<option value="">Select Program</option>';
+    majorContainer.classList.add("d-none"); // Reset major
+
+    if (selectedDept === "BES") {
+        yearContainer.classList.add("d-none");
+    } else {
+        yearContainer.classList.remove("d-none");
+    }
+
+    if (selectedDept && schoolData[selectedDept]) {
+        schoolData[selectedDept].forEach(prog => {
+            const option = document.createElement("option");
+            option.value = prog.name;
+            option.textContent = prog.name;
+            if (prog.majors) {
+                option.setAttribute("data-majors", JSON.stringify(prog.majors));
+            }
+            programSelect.appendChild(option);
+        });
+    }
+}
+
+function checkModalMajors() {
+    const programSelect = document.getElementById("modal_program");
+    const majorContainer = document.getElementById("modal_major_container");
+    const majorSelect = document.getElementById("modal_major");
+    const majorLabel = document.getElementById("modal_major_label");
+
+    const selectedOption = programSelect.options[programSelect.selectedIndex];
+    const majorsData = selectedOption.getAttribute("data-majors");
+
+    majorSelect.innerHTML = '<option value="">Select Option</option>';
+
+    if (majorsData) {
+        const majors = JSON.parse(majorsData);
+        majors.forEach(m => {
+            let option = document.createElement("option");
+            option.value = m;
+            option.textContent = m;
+            majorSelect.appendChild(option);
+        });
+
+        if (selectedOption.value.includes("Grade")) {
+            majorLabel.textContent = "Track / Strand";
+        } else {
+            majorLabel.textContent = "Major / Specialization";
+        }
+
+        majorContainer.classList.remove("d-none");
+        majorSelect.required = true;
+    } else {
+        majorContainer.classList.add("d-none");
+        majorSelect.required = false;
+    }
+}
+
+function toggleModalRole() {
+    const role = document.getElementById("modal_role").value;
+    
+    const deptCol = document.getElementById("modal_dept_col");
+    const progCol = document.getElementById("modal_prog_col");
+    const yearCol = document.getElementById("modal_year_level_container");
+    const majorContainer = document.getElementById("modal_major_container");
+    
+    const deptSelect = document.getElementById("modal_department");
+    const progSelect = document.getElementById("modal_program");
+    const yearSelect = document.getElementById("modal_year_level");
+    const majorSelect = document.getElementById("modal_major");
+
+    // Reset to Student State (Visible & Enabled)
+    deptCol.classList.remove("d-none");
+    progCol.classList.remove("d-none");
+    // yearCol visibility is managed by updateModalPrograms
+    
+    deptSelect.disabled = false;
+    progSelect.disabled = false;
+    yearSelect.disabled = false;
+    majorSelect.disabled = false;
+
+    if (role === "faculty") {
+        // Grey out (Disable) Program, Year, Major
+        // AND clear their values to prevent old data from sticking
+        progSelect.disabled = true;
+        yearSelect.disabled = true;
+        majorSelect.disabled = true;
+        progSelect.value = "";
+        yearSelect.value = "";
+        majorSelect.value = "";
+        majorContainer.classList.add("d-none");
+
+    } else if (role === "guest") {
+        // Remove (Hide & Disable) Dept, Prog, Year, Major
+        // AND clear their values
+        deptCol.classList.add("d-none");
+        progCol.classList.add("d-none");
+        yearCol.classList.add("d-none");
+        majorContainer.classList.add("d-none");
+        
+        deptSelect.disabled = true;
+        progSelect.disabled = true;
+        yearSelect.disabled = true;
+        majorSelect.disabled = true;
+
+        deptSelect.value = "";
+        progSelect.value = "";
+        yearSelect.value = "";
+        majorSelect.value = "";
+
+    } else {
+        // Student: Ensure logic runs to show/hide Year based on Dept
+        updateModalPrograms();
+        checkModalMajors();
     }
 }
 
@@ -379,20 +546,33 @@ function openEditModal(button) {
     const first = button.getAttribute('data-firstname');
     const mid = button.getAttribute('data-middlename');
     const last = button.getAttribute('data-lastname');
+    const email = button.getAttribute('data-email');
     const prog = button.getAttribute('data-program');
     const role = button.getAttribute('data-role');
     const dept = button.getAttribute('data-department');
     const year = button.getAttribute('data-yearlevel'); // NEW
+    const major = button.getAttribute('data-major'); // NEW
 
     // 2. Set values in the modal inputs
     document.getElementById('modal_id_number').value = id;
     document.getElementById('modal_first_name').value = first;
     document.getElementById('modal_middle_name').value = mid;
     document.getElementById('modal_last_name').value = last;
-    document.getElementById('modal_program').value = prog;
+    document.getElementById('modal_email').value = email;
     document.getElementById('modal_role').value = role;
+    
+    // Handle Department & Program Dropdowns
     document.getElementById('modal_department').value = dept;
-    document.getElementById('modal_year_level').value = year; // NEW
+    
+    toggleModalRole(); // Apply role-based UI logic
+
+    // Set values AFTER toggleModalRole has populated the dropdowns
+    document.getElementById('modal_program').value = prog; 
+    
+    checkModalMajors(); // Now check majors based on the set program
+    document.getElementById('modal_major').value = major; 
+    
+    document.getElementById('modal_year_level').value = year;
 
     const form = document.getElementById('editForm');
     form.action = "/update-patron/" + id + "/";
@@ -404,6 +584,16 @@ function openEditModal(button) {
 function confirmSave() {
     if (confirm("Are you sure you want to save these changes?")) {
         document.getElementById('editForm').submit();
+    }
+}
+
+function confirmResend(idNumber, email) {
+    if (!email) {
+        alert("This user does not have an email address. Please edit the user to add one first.");
+        return;
+    }
+    if (confirm("Are you sure you want to resend the QR code to " + email + "?")) {
+        window.location.href = "/resend-qr/" + idNumber + "/";
     }
 }
 

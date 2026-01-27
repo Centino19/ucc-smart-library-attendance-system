@@ -309,42 +309,33 @@ def update_patron(request, id_number):
     patron = get_object_or_404(Patron, id_number=id_number)
     if request.method == 'POST':
         try:
+            # Get the new role first to determine which fields to save
+            new_role = request.POST.get('role')
+
             patron.id_number = request.POST.get('id_number')
             patron.first_name = request.POST.get('first_name')
             patron.middle_name = request.POST.get('middle_name')
             patron.last_name = request.POST.get('last_name')
-            patron.program = request.POST.get('program')
-            patron.role = request.POST.get('role')
-            patron.department = request.POST.get('department')
-            patron.year_level = request.POST.get('year_level')
+            patron.role = new_role
+
+            # Conditionally update fields based on role for data integrity
+            if new_role == 'student':
+                patron.department = request.POST.get('department')
+                patron.program = request.POST.get('program')
+                patron.major = request.POST.get('major')
+                patron.year_level = request.POST.get('year_level')
+            elif new_role == 'faculty':
+                patron.department = request.POST.get('department')
+                patron.program, patron.major, patron.year_level = "", "", ""
+            else:  # Guest
+                patron.department, patron.program, patron.major, patron.year_level = "", "", "", ""
 
             # Email Update Logic
             new_email = request.POST.get('email', '').strip()
             patron.email = new_email
 
             patron.save()
-
-            if new_email:
-                try:
-                    qr_img = qrcode.make(patron.id_number)
-                    buffer = BytesIO()
-                    qr_img.save(buffer, format="PNG")
-                    buffer.seek(0)
-
-                    subject = "UCC Library - Your QR ID (Updated)"
-                    body = f"Hello {patron.first_name},\n\nYour details have been updated. Here is your QR Code."
-                    filename = f"QR_{patron.id_number}.png"
-
-                    email_msg = EmailMessage(
-                        subject, body, settings.DEFAULT_FROM_EMAIL, [new_email],
-                    )
-                    email_msg.attach(filename, buffer.getvalue(), 'image/png')
-                    email_msg.send(fail_silently=False)
-                    messages.success(request, f"Updated and sent QR to {new_email}!")
-                except:
-                    messages.warning(request, "Updated, but email failed to send.")
-            else:
-                messages.success(request, "User details updated successfully.")
+            messages.success(request, "User details updated successfully.")
 
             return redirect('patron_list')
         except Exception as e:
@@ -358,6 +349,34 @@ def delete_patron(request, id_number):
     patron = get_object_or_404(Patron, id_number=id_number)
     patron.delete()
     messages.success(request, "User deleted successfully.")
+    return redirect('patron_list')
+
+@login_required
+def resend_qr(request, id_number):
+    """Manually resend the QR code email to the user."""
+    patron = get_object_or_404(Patron, id_number=id_number)
+    
+    if not patron.email:
+        messages.error(request, f"User {patron.first_name} has no email address. Please Edit the user to add one first.")
+        return redirect('patron_list')
+
+    try:
+        qr_img = qrcode.make(patron.id_number)
+        buffer = BytesIO()
+        qr_img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        subject = "UCC Library - Your QR ID (Resent)"
+        body = f"Hello {patron.first_name},\n\nHere is a copy of your QR Code for the library attendance system."
+        filename = f"QR_{patron.id_number}.png"
+
+        email_msg = EmailMessage(subject, body, settings.DEFAULT_FROM_EMAIL, [patron.email])
+        email_msg.attach(filename, buffer.getvalue(), 'image/png')
+        email_msg.send(fail_silently=False)
+        messages.success(request, f"QR Code successfully resent to {patron.email}")
+    except Exception as e:
+        messages.error(request, f"Failed to send email: {e}")
+
     return redirect('patron_list')
 
 
@@ -683,6 +702,34 @@ def bulk_import(request):
     return render(request, 'library_app/bulk_import.html', {
         'departments': Patron.DEPARTMENT_CHOICES
     })
+
+
+@login_required
+def export_patrons_csv(request):
+    """Exports all patrons to a CSV file."""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="patron_list.csv"'
+
+    writer = csv.writer(response)
+    # Write the header row
+    writer.writerow(['ID Number', 'First Name', 'Middle Name', 'Last Name', 'Email', 'Role', 'Department', 'Program', 'Major', 'Year Level'])
+
+    patrons = Patron.objects.all().order_by('last_name')
+    for patron in patrons:
+        writer.writerow([
+            patron.id_number,
+            patron.first_name,
+            patron.middle_name,
+            patron.last_name,
+            patron.email,
+            patron.get_role_display(),
+            patron.get_department_display(),
+            patron.program,
+            patron.major,
+            patron.year_level
+        ])
+
+    return response
 
 
 # ==========================================
