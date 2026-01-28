@@ -36,7 +36,7 @@
         <p class="text-muted small">{{ patron.get_department_display }}</p>
 
         <div class="mt-4 border-top pt-4">
-            <a href="{% url 'patron_list' %}" class="btn btn-outline-dark me-2">Back to List</a>
+            <a href="javascript:history.back()" class="btn btn-outline-dark me-2">Back to List</a>
             <a href="{% url 'dashboard' %}" class="btn btn-success" style="background-color: var(--primary-green);">Dashboard</a>
         </div>
     </div>

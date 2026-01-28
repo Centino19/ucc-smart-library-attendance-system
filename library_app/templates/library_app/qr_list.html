@@ -246,7 +246,7 @@
                         </thead>
                         <tbody>
                             {% for patron in patrons %}
-                            <tr>
+                            <tr id="patron-{{ patron.id_number }}">
                                 <td class="p-3 fw-bold text-nowrap">{{ patron.id_number }}</td>
                                 <td>
                                     {{ patron.first_name }} {% if patron.middle_name %}{{ patron.middle_name|slice:":1" }}.{% endif %} {{ patron.last_name }}
@@ -390,6 +390,7 @@
 
                 <form id="editForm" method="post" action="">
                     {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ current_full_path }}">
 
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">ID Number</label>

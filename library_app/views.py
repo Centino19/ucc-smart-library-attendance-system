@@ -13,7 +13,7 @@ from django.db.models import Count, Sum, F, Q, Prefetch
 from django.db.models.functions import ExtractMonth, ExtractDay
 from django.template.loader import get_template
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.core.mail import EmailMessage
 from django.conf import settings
 from django.contrib import messages
@@ -252,6 +252,7 @@ def patron_list(request):
         'selected_program': program_filter,
         'selected_year': year_filter,
         'query_params': query_params.urlencode(),
+        'current_full_path': request.get_full_path(),
     }
     return render(request, 'library_app/qr_list.html', context)
 
@@ -362,9 +363,18 @@ def update_patron(request, id_number):
             patron.save()
             messages.success(request, "User details updated successfully.")
 
+            # Check for 'HTTP_REFERER' to go back to the previous page
+            referer = request.META.get('HTTP_REFERER')
+            if referer:
+                return HttpResponseRedirect(referer)
+
             return redirect('patron_list')
         except Exception as e:
             messages.error(request, f"Error updating user: {e}")
+            
+            referer = request.META.get('HTTP_REFERER')
+            if referer:
+                return HttpResponseRedirect(referer)
 
     return redirect('patron_list')
 
@@ -374,6 +384,12 @@ def delete_patron(request, id_number):
     patron = get_object_or_404(Patron, id_number=id_number)
     patron.delete()
     messages.success(request, "User deleted successfully.")
+    
+    # Check for 'HTTP_REFERER' to go back to the previous page
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return HttpResponseRedirect(referer)
+        
     return redirect('patron_list')
 
 @login_required
@@ -383,6 +399,10 @@ def resend_qr(request, id_number):
     
     if not patron.email:
         messages.error(request, f"User {patron.first_name} has no email address. Please Edit the user to add one first.")
+        # Check for 'HTTP_REFERER' to go back to the previous page
+        referer = request.META.get('HTTP_REFERER')
+        if referer:
+            return HttpResponseRedirect(referer)
         return redirect('patron_list')
 
     try:
@@ -401,6 +421,11 @@ def resend_qr(request, id_number):
         messages.success(request, f"QR Code successfully resent to {patron.email}")
     except Exception as e:
         messages.error(request, f"Failed to send email: {e}")
+
+    # Check for 'HTTP_REFERER' to go back to the previous page
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return HttpResponseRedirect(referer)
 
     return redirect('patron_list')
 
