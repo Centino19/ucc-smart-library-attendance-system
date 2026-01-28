@@ -1,93 +1,79 @@
-# Library Attendance System
+# 📚 UCC Library Attendance System
 
-A comprehensive web-based application designed to streamline library attendance tracking using QR code technology. Built with Django, this system allows for real-time monitoring of library usage, automated reporting, and efficient patron management.
+A smart, QR code-based attendance monitoring system designed for the University of Camarin (UCC) Library. This system streamlines student login/logout, tracks library usage, and generates detailed PDF reports.
 
-## 🚀 Features
+## 🚀 Key Features
 
 ### 🔹 Core Functionality
-*   **QR Code Scanning:** Fast check-in and check-out using a webcam or barcode scanner.
-*   **Real-Time Dashboard:** Live statistics on daily visits, current occupancy, and historical trends using interactive charts (Chart.js).
-*   **Manual Entry:** Fallback option to manually input ID numbers if scanning fails.
-*   **Remote Access:** Supports Ngrok tunneling for secure HTTPS access on mobile devices.
+*   **QR Code Scanning:** Fast check-in and check-out using a webcam or mobile device.
+*   **Real-Time Dashboard:** Live statistics, charts (Chart.js), and "Top 5" leaderboards.
+*   **Auto-Checkout:** Automatically closes open sessions at 5:00 PM daily to ensure data accuracy.
+*   **Manual Entry:** Fallback option for students who forgot their IDs.
 
 ### 🔹 User Management
-*   **User Database:** Manage student and faculty records (Add, Edit, Delete).
-*   **Bulk Import:** Upload students via CSV to populate the database quickly.
-*   **QR Generation:** Automatically generates unique QR codes for every user.
-*   **Email Integration:** Sends the generated QR code directly to the user's registered email immediately after creation.
+*   **Patron Database:** Supports College Students, Basic Education (K-12), Faculty, and Guests.
+*   **Bulk Import:** Upload users via CSV with intelligent acronym mapping (e.g., "BSCS" -> "Bachelor of Science in Computer Science").
+*   **QR Generation:** Automatically generates and emails QR codes to users upon registration.
 
 ### 🔹 Reporting & Analytics
-*   **PDF Reports:** Generate detailed attendance reports for specific semesters or months ready for printing.
-*   **Scan History:** View and filter logs by date range or specific user ID.
-*   **Leaderboards:** Tracks "Top 5 Visitors" and "Top Study Leaders" (time spent inside).
+*   **PDF Reports:** Generate professional attendance reports by Semester or Month.
+*   **Scan History:** Searchable logs with date filtering.
+*   **Data Export:** Export user lists to CSV.
 
 ## 🛠️ Tech Stack
-
-*   **Backend:** Python, Django 6.0
-*   **Frontend:** HTML5, CSS3, Bootstrap 5, JavaScript
-*   **Charts:** Chart.js
+*   **Backend:** Django 6.0, Python 3.11+
+*   **Frontend:** Bootstrap 5, JavaScript, Chart.js
 *   **Database:** PostgreSQL (Production) / SQLite (Dev)
-*   **PDF Generation:** xhtml2pdf
-*   **QR Processing:** qrcode, Pillow
+*   **PDF Engine:** xhtml2pdf
+*   **Scanner:** html5-qrcode
+*   **Server:** Waitress (Production WSGI)
 
 ## ⚙️ Installation Guide
 
-Follow these steps to set up the project locally.
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Centino19/ucc-smart-library-attendance-system.git
+    cd ucc-smart-library-attendance-system
+    ```
 
-### Prerequisites
-*   Python 3.10+ installed.
+2.  **Create Virtual Environment:**
+    ```bash
+    python -m venv .venv
+    .venv\Scripts\activate
+    ```
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/YOUR_USERNAME/library-attendance-system.git
-cd library-attendance-system
-```
+3.  **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### 2. Create a Virtual Environment
-**Windows:**
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-**Mac/Linux:**
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+4.  **Setup Database:**
+    ```bash
+    python manage.py migrate
+    ```
 
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+5.  **Create Admin User:**
+    ```bash
+    python manage.py createsuperuser
+    ```
 
-### 4. Database Setup
-Initialize the local database:
-```bash
-python manage.py migrate
-```
+6.  **Run the System:**
+    ```bash
+    # For Production (Recommended)
+    python run_production.py
+    
+    # For Development
+    python manage.py runserver
+    ```
 
-### 5. Create Admin User
-Create a superuser to access the dashboard:
-```bash
-python manage.py createsuperuser
-```
+## 📱 Mobile Scanner Setup (Ngrok)
+To use a mobile phone as a scanner:
+1.  Install **Ngrok**.
+2.  Run `ngrok http 8000` in a terminal.
+3.  Use the `https` link provided by Ngrok on your mobile device.
+4.  The camera will work instantly (bypassing browser security restrictions on HTTP).
 
-### 6. Email Configuration (Optional)
-To enable the feature that emails QR codes to users:
-1.  Open `library_project/settings.py`.
-2.  Locate the `EMAIL CONFIGURATION` section at the bottom.
-3.  Update `EMAIL_HOST_USER` with your Gmail address.
-4.  Update `EMAIL_HOST_PASSWORD` with your **Gmail App Password** (not your login password).
-
-### 7. Run the Server
-```bash
-python manage.py runserver
-```
-Access the application at: `http://127.0.0.1:8000/`
-
-## 📸 Usage
-
-1.  **Login:** Use your superuser credentials to log in.
-2.  **Dashboard:** View stats. The page auto-refreshes every 10 seconds to keep data current.
-3.  **Scanner Mode:** Navigate to "Scanner Mode" to start processing students.
-4.  **Register Users:** Go to "Register User" to add single users or "Bulk Import" for CSV uploads.
+## ⏰ Automatic Checkout
+The system includes a management command to force-checkout users who forgot to log out.
+*   **Automatic:** Runs daily at 5:00 PM (via APScheduler).
+*   **Manual:** Run `python manage.py force_checkout` in the terminal.

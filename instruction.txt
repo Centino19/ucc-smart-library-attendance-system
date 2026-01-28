@@ -1,84 +1,51 @@
-LIBRARY ATTENDANCE SYSTEM - SETUP GUIDE
+LIBRARY ATTENDANCE SYSTEM - SETUP & USER GUIDE
+==============================================
 
-Follow these steps to run the project on your computer.
-
-=== PREREQUISITES ===
-1. Make sure you have Python installed.
-   Type `python --version` in your terminal to check.
-
-=== STEP 1: SETUP FOLDER ===
-1. Download the code and unzip it (or clone the repository).
-2. Open the folder in your code editor (VS Code, PyCharm, etc.).
-3. Open a Terminal/Command Prompt inside this folder.
-
-=== STEP 2: CREATE VIRTUAL ENVIRONMENT ===
-It is best practice to use a virtual environment so libraries don't conflict.
-
-For Windows:
-   python -m venv venv
-   venv\Scripts\activate
-
-For Mac/Linux:
-   python3 -m venv venv
-   source venv/bin/activate
-
-(You should see `(venv)` at the start of your terminal line).
-
-=== STEP 3: INSTALL DEPENDENCIES ===
-Run this command to install Django, QR code generator, and other tools:
-
+=== PART 1: INITIAL SETUP ===
+1. Install Python (3.10 or higher).
+2. Open a terminal in this folder.
+3. Create a virtual environment:
+   python -m venv .venv
+4. Activate the environment:
+   .venv\Scripts\activate
+5. Install dependencies:
    pip install -r requirements.txt
-
-=== STEP 4: SETUP DATABASE ===
-NOTE: The system is configured for PostgreSQL by default.
-Option A (Recommended): Install PostgreSQL and create a database named 'library_db'.
-Option B (Easier): Open `library_project/settings.py` and switch the DATABASES setting back to SQLite.
-
-Once configured, run:
-
+6. Setup the database:
    python manage.py migrate
-
-=== STEP 5: PREPARE STATIC FILES ===
-To ensure logos and styles load correctly in production:
-
+7. Prepare static files (CSS/Logos):
    python manage.py collectstatic
-   (Type 'yes' if asked to overwrite).
-
-=== STEP 6: CREATE ADMIN ACCOUNT ===
-To access the dashboard, you need an admin account:
-
+8. Create an admin account:
    python manage.py createsuperuser
 
-(Enter a username and password when prompted. You can skip the email).
-
-=== STEP 7: CONFIGURE EMAIL (OPTIONAL) ===
-If you want the system to send QR codes via email:
-1. Open `library_project/settings.py`.
-2. Scroll to the bottom to find `EMAIL_HOST_PASSWORD`.
-3. Replace 'REPLACE_WITH_APP_PASSWORD' with your own Gmail App Password.
-   (Note: You need 2-Step Verification enabled on Google to generate an App Password).
-4. Update `EMAIL_HOST_USER` with your Gmail address.
-
-=== STEP 8: RUN THE SYSTEM ===
-You have two ways to run the system:
-
+=== PART 2: RUNNING THE SYSTEM ===
 Option A: Production Mode (Recommended for Library)
    python run_production.py
 
 Option B: Development Mode
    python manage.py runserver
 
-=== STEP 9: ENABLE CAMERA (NGROK) ===
-To make the camera work on phones and other laptops:
-
-1. Download Ngrok (https://ngrok.com/download) and put `ngrok.exe` in this folder.
+=== PART 3: CONNECTING MOBILE PHONES (CAMERA) ===
+1. Download Ngrok and place `ngrok.exe` in this folder.
 2. Open a NEW terminal window.
-3. Run:
-   ngrok http 8000
-4. Copy the link ending in `.ngrok-free.app` (e.g., https://a1b2.ngrok-free.app).
-5. Use that link on any device to access the system with camera support.
+3. Run: ngrok http 8000
+4. Copy the "Forwarding" link (https://....ngrok-free.app).
+5. Open that link on your phone to scan QR codes.
 
-=== STEP 10: ACCESS ===
-1. Open your browser.
-2. Go to: http://127.0.0.1:8000/ (or your Ngrok link)
-3. Login with the superuser account you created in Step 5.
+=== PART 4: AUTOMATIC CHECKOUT ===
+The system is designed to automatically check out users at 5:00 PM daily.
+
+To run this manually (e.g., if the server was off):
+   python manage.py force_checkout
+
+=== PART 5: BULK IMPORT CSV FORMAT ===
+When uploading students via CSV, ensure the file has these headers:
+   - Code (ID Number)
+   - First Name
+   - Middle Name
+   - Last Name
+   - Course (e.g., BSCS, Grade 11)
+   - Year (e.g., 1, 2, 11)
+   - Email
+
+* Note: The system automatically converts acronyms (like 'BSCS') into full names.
+* Note: For Basic Ed, 'Course' can be the Grade level.
