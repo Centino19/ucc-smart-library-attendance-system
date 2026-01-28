@@ -9,7 +9,7 @@ import csv
 from datetime import timedelta
 
 # Django Imports
-from django.db.models import Count, Sum, F, Q
+from django.db.models import Count, Sum, F, Q, Prefetch
 from django.db.models.functions import ExtractMonth, ExtractDay
 from django.template.loader import get_template
 from django.shortcuts import render, redirect, get_object_or_404
@@ -22,6 +22,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.contrib.staticfiles import finders
+from django.core.paginator import Paginator
 
 # Third-party
 from xhtml2pdf import pisa
@@ -179,7 +180,9 @@ def patron_list(request):
     program_filter = request.GET.get('program')
     year_filter = request.GET.get('year_level')
 
-    patrons = Patron.objects.all().order_by('-created_at')
+    patrons = Patron.objects.prefetch_related(
+        Prefetch('logs', queryset=AttendanceLog.objects.order_by('-scan_time'))
+    ).order_by('-created_at')
 
     if query:
         # Split the query into individual terms (e.g., "Vincent Faustino" -> ["Vincent", "Faustino"])
@@ -215,18 +218,40 @@ def patron_list(request):
     if dept_filter:
         patrons = patrons.filter(department=dept_filter)
 
-    if program_filter:
-        patrons = patrons.filter(program=program_filter)
+    if dept_filter == 'BES':
+        # BES Logic: UI 'Year Level' -> DB 'Program', UI 'Program' -> DB 'Major'
+        if year_filter:
+            patrons = patrons.filter(program=year_filter)
+        if program_filter:
+            patrons = patrons.filter(major=program_filter)
+    else:
+        # Standard College Logic
+        if program_filter:
+            if " - " in program_filter and "Grade" in program_filter:
+                prog_part, major_part = program_filter.split(" - ", 1)
+                patrons = patrons.filter(program=prog_part, major__icontains=major_part)
+            else:
+                patrons = patrons.filter(program=program_filter)
+        if year_filter:
+            patrons = patrons.filter(year_level=year_filter)
 
-    if year_filter:
-        patrons = patrons.filter(year_level=year_filter)
+    # --- PAGINATION (Fix for Broken Pipe / Slow Loading) ---
+    paginator = Paginator(patrons, 50) # Show 50 users per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve filters for pagination links (remove 'page' so it doesn't duplicate)
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
 
     context = {
-        'patrons': patrons,
+        'patrons': page_obj,
         'roles': Patron.ROLE_CHOICES,
         'departments': Patron.DEPARTMENT_CHOICES,
         'selected_program': program_filter,
-        'selected_year': year_filter
+        'selected_year': year_filter,
+        'query_params': query_params.urlencode(),
     }
     return render(request, 'library_app/qr_list.html', context)
 
@@ -623,19 +648,48 @@ def bulk_import(request):
         selected_dept = request.POST.get('department')
 
         ACRONYM_MAP = {
+            # SBS
             "BSA": "Bachelor of Science in Accountancy",
             "BSBA": "Bachelor of Science in Business Administration",
             "BSIS": "Bachelor of Science in Information Systems",
             "BSCS": "Bachelor of Science in Computer Science",
             "BSRM": "Bachelor of Science in Real Estate Management",
             "BSREM": "Bachelor of Science in Real Estate Management",
+
+            # SHES
             "BSN": "Bachelor of Science in Nursing",
+
+            # SEAS
             "BA English": "Bachelor of Arts in English",
+            "AB English": "Bachelor of Arts in English",
             "BA History": "Bachelor of Arts in History",
+            "AB History": "Bachelor of Arts in History",
             "BA PolSci": "Bachelor of Arts in Political Science",
+            "AB PolSci": "Bachelor of Arts in Political Science",
+            "AB Political Science": "Bachelor of Arts in Political Science",
             "BECEd": "Bachelor of Early Childhood Education",
             "BEEd": "Bachelor of Elementary Education",
             "BSEd": "Bachelor of Secondary Education",
+            "BSED": "Bachelor of Secondary Education",
+            "BEED": "Bachelor of Elementary Education",
+            "BECED": "Bachelor of Early Childhood Education",
+            "AB": "Bachelor of Arts",
+
+            # GS
+            "MAEd": "Master of Arts in Education",
+            "MAE": "Master of Arts in Education",
+            "MAN": "Master of Arts in Nursing",
+
+            # BES
+            "K1": "Kinder 1",
+            "K2": "Kinder 2",
+            "G1": "Grade 1", "G2": "Grade 2", "G3": "Grade 3",
+            "G4": "Grade 4", "G5": "Grade 5", "G6": "Grade 6",
+            "G7": "Grade 7", "G8": "Grade 8", "G9": "Grade 9",
+            "G10": "Grade 10",
+            "G11": "Grade 11",
+            "G12": "Grade 12",
+            "SHS": "Grade 11" # Fallback if just SHS is used
         }
 
         YEAR_MAP = {

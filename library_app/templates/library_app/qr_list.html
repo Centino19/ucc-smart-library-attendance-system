@@ -67,6 +67,28 @@
         /* PREVENT TEXT WRAPPING */
         .no-wrap-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .compact-col { width: 1%; white-space: nowrap; } /* Forces column to be as small as content */
+
+        /* PAGINATION COLORS */
+        .pagination .page-link {
+            color: var(--primary-green);
+        }
+        .pagination .page-link:hover {
+            background-color: #e9ecef;
+            color: #082e23;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: var(--primary-green);
+            border-color: var(--primary-green);
+            color: white;
+        }
+        .pagination-input {
+            border-color: #dee2e6;
+            color: var(--primary-green);
+        }
+        .pagination-input:focus {
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 0.25rem rgba(11, 61, 46, 0.25);
+        }
     </style>
 </head>
 <body>
@@ -119,12 +141,22 @@
 
         <div class="card p-4 mb-4 border-0 shadow-sm rounded-4">
             <form method="get" class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label small fw-bold text-muted">Search</label>
                         <input type="text" name="q" class="form-control" placeholder="Name or ID..." value="{{ request.GET.q }}">
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Role</label>
+                        <select name="role" class="form-select">
+                            <option value="">All Roles</option>
+                            {% for code, name in roles %}
+                                <option value="{{ code }}" {% if request.GET.role == code %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
                         <label class="form-label small fw-bold text-muted">Department</label>
                         <select name="department" id="deptSelect" class="form-select" onchange="updatePrograms()">
                             <option value="">All Departments</option>
@@ -135,22 +167,16 @@
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label small fw-bold text-muted">Program</label>
-                        <select name="program" id="programSelect" class="form-select">
-                            <option value="">All Programs</option>
+                        <label class="form-label small fw-bold text-muted">Year Level</label>
+                        <select name="year_level" id="yearLevelSelect" class="form-select" onchange="checkBESFilter()">
+                            <option value="">All Levels</option>
                         </select>
                     </div>
 
                     <div class="col-md-2">
-                        <label class="form-label small fw-bold text-muted">Year Level</label>
-                        <select name="year_level" class="form-select">
-                            <option value="">All Levels</option>
-                            <option value="1st Year" {% if request.GET.year_level == "1st Year" %}selected{% endif %}>1st Year</option>
-                            <option value="2nd Year" {% if request.GET.year_level == "2nd Year" %}selected{% endif %}>2nd Year</option>
-                            <option value="3rd Year" {% if request.GET.year_level == "3rd Year" %}selected{% endif %}>3rd Year</option>
-                            <option value="4th Year" {% if request.GET.year_level == "4th Year" %}selected{% endif %}>4th Year</option>
-                            <option value="Grade 11" {% if request.GET.year_level == "Grade 11" %}selected{% endif %}>Grade 11</option>
-                            <option value="Grade 12" {% if request.GET.year_level == "Grade 12" %}selected{% endif %}>Grade 12</option>
+                        <label class="form-label small fw-bold text-muted">Program</label>
+                        <select name="program" id="programSelect" class="form-select">
+                            <option value="">All Programs</option>
                         </select>
                     </div>
 
@@ -164,6 +190,47 @@
 
         <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body p-0">
+                <!-- Top Pagination Controls (New Minimalistic Design) -->
+                {% if patrons.has_other_pages %}
+                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                    <div>
+                        <small class="text-muted">
+                             Page {{ patrons.number }} out of {{ patrons.paginator.num_pages }}
+                        </small>
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <!-- First & Previous -->
+                            {% if patrons.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page=1&{{ query_params }}" title="First"><i class="fas fa-angle-double-left"></i></a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.previous_page_number }}&{{ query_params }}" title="Previous"><i class="fas fa-angle-left"></i></a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i></span></li>
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-left"></i></span></li>
+                            {% endif %}
+
+                            <!-- Page Numbers -->
+                            {% for i in patrons.paginator.get_elided_page_range %}
+                                {% if i == patrons.paginator.ELLIPSIS %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% else %}
+                                    <li class="page-item {% if patrons.number == i %}active{% endif %}"><a class="page-link" href="?page={{ i }}&{{ query_params }}">{{ i }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Next & Last -->
+                            {% if patrons.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.next_page_number }}&{{ query_params }}" title="Next"><i class="fas fa-angle-right"></i></a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.paginator.num_pages }}&{{ query_params }}" title="Last"><i class="fas fa-angle-double-right"></i></a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-right"></i></span></li>
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-right"></i></span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="table-light">
@@ -180,20 +247,32 @@
                         <tbody>
                             {% for patron in patrons %}
                             <tr>
-                                <td class="p-3 fw-bold">{{ patron.id_number }}</td>
+                                <td class="p-3 fw-bold text-nowrap">{{ patron.id_number }}</td>
                                 <td>
                                     {{ patron.first_name }} {% if patron.middle_name %}{{ patron.middle_name|slice:":1" }}.{% endif %} {{ patron.last_name }}
-                                    {% if patron.program %}
-                                        <br><small class="text-muted">{{ patron.program }}</small>
+                                    {% if patron.department == 'BES' %}
+                                        {% if patron.major %}
+                                            <br><small class="text-muted">{{ patron.major|cut:"Academic Track: " }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if patron.program %}
+                                            <br><small class="text-muted">{{ patron.program }}</small>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                                 <td><span class="badge bg-secondary rounded-pill">{{ patron.get_role_display }}</span></td>
 
                                 <td>{{ patron.get_department_display|default:"-" }}</td>
 
-                                <td>{{ patron.year_level|default:"-" }}</td>
+                                <td class="text-nowrap">
+                                    {% if patron.department == 'BES' %}
+                                        {{ patron.program|default:"-" }}
+                                    {% else %}
+                                        {{ patron.year_level|default:"-" }}
+                                    {% endif %}
+                                </td>
 
-                                {% with last_log=patron.logs.first %}
+                                {% with last_log=patron.logs.all.0 %}
                                 <td>
                                     {% if last_log %}
                                         {{ last_log.scan_time|date:"h:i A" }}
@@ -255,6 +334,47 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Controls -->
+                {% if patrons.has_other_pages %}
+                <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                    <div>
+                        <small class="text-muted">
+                             Page {{ patrons.number }} out of {{ patrons.paginator.num_pages }}
+                        </small>
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <!-- First & Previous -->
+                            {% if patrons.has_previous %}
+                                <li class="page-item"><a class="page-link" href="?page=1&{{ query_params }}" title="First"><i class="fas fa-angle-double-left"></i></a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.previous_page_number }}&{{ query_params }}" title="Previous"><i class="fas fa-angle-left"></i></a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i></span></li>
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-left"></i></span></li>
+                            {% endif %}
+
+                            <!-- Page Numbers -->
+                            {% for i in patrons.paginator.get_elided_page_range %}
+                                {% if i == patrons.paginator.ELLIPSIS %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% else %}
+                                    <li class="page-item {% if patrons.number == i %}active{% endif %}"><a class="page-link" href="?page={{ i }}&{{ query_params }}">{{ i }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Next & Last -->
+                            {% if patrons.has_next %}
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.next_page_number }}&{{ query_params }}" title="Next"><i class="fas fa-angle-right"></i></a></li>
+                                <li class="page-item"><a class="page-link" href="?page={{ patrons.paginator.num_pages }}&{{ query_params }}" title="Last"><i class="fas fa-angle-double-right"></i></a></li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-right"></i></span></li>
+                                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-right"></i></span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -315,20 +435,16 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-4" id="modal_year_level_container">
+                            <label class="form-label text-muted small fw-bold">Year Level</label>
+                            <select class="form-select" id="modal_year_level" name="year_level" onchange="checkBESModal()">
+                                <option value="">Select Year</option>
+                            </select>
+                        </div>
                         <div class="col-md-4" id="modal_prog_col">
                             <label class="form-label text-muted small fw-bold">Program / Course</label>
                             <select class="form-select" id="modal_program" name="program" onchange="checkModalMajors()">
                                 <option value="">Select Department First</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4" id="modal_year_level_container">
-                            <label class="form-label text-muted small fw-bold">Year Level</label>
-                            <select class="form-select" id="modal_year_level" name="year_level">
-                                <option value="">Select Year</option>
-                                <option value="1st Year">1st Year</option>
-                                <option value="2nd Year">2nd Year</option>
-                                <option value="3rd Year">3rd Year</option>
-                                <option value="4th Year">4th Year</option>
                             </select>
                         </div>
                     </div>
@@ -395,46 +511,143 @@ const schoolData = {
 function updatePrograms() {
     const deptSelect = document.getElementById("deptSelect");
     const programSelect = document.getElementById("programSelect");
+    const yearSelect = document.getElementById("yearLevelSelect");
     const selectedDept = deptSelect.value;
 
     programSelect.innerHTML = '<option value="">All Programs</option>';
+    yearSelect.innerHTML = '<option value="">All Levels</option>';
+    yearSelect.disabled = false;
+    programSelect.disabled = false;
 
-    if (selectedDept && schoolData[selectedDept]) {
-        schoolData[selectedDept].forEach(progName => {
-            const option = document.createElement("option");
-            option.value = progName.name; // Access .name property
-            option.textContent = progName.name;
+    if (selectedDept === "BES") {
+        // BES Logic: Year Level gets Grades, Program gets Tracks (if G11/12)
+        if (schoolData["BES"]) {
+            schoolData["BES"].forEach(prog => {
+                let option = document.createElement("option");
+                option.value = prog.name;
+                option.textContent = prog.name;
+                if (prog.majors) {
+                    option.setAttribute("data-majors", JSON.stringify(prog.majors));
+                }
+                yearSelect.appendChild(option);
+            });
+        }
+        programSelect.disabled = true; // Disabled until Grade 11/12 is selected
+    } else {
+        // College Logic: Year Level gets 1st-4th, Program gets Courses
+        const collegeYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+        collegeYears.forEach(y => {
+            let option = document.createElement("option");
+            option.value = y;
+            option.textContent = y;
+            yearSelect.appendChild(option);
+        });
+
+        if (selectedDept && schoolData[selectedDept]) {
+            schoolData[selectedDept].forEach(prog => {
+                let option = document.createElement("option");
+                option.value = prog.name;
+                option.textContent = prog.name;
+                programSelect.appendChild(option);
+            });
+        }
+    }
+}
+
+function checkBESFilter() {
+    const deptSelect = document.getElementById("deptSelect");
+    if (deptSelect.value !== "BES") return;
+
+    const yearSelect = document.getElementById("yearLevelSelect");
+    const programSelect = document.getElementById("programSelect");
+    const selectedOption = yearSelect.options[yearSelect.selectedIndex];
+    const majorsData = selectedOption.getAttribute("data-majors");
+
+    programSelect.innerHTML = '<option value="">All Tracks</option>';
+
+    if (majorsData) {
+        programSelect.disabled = false;
+        const majors = JSON.parse(majorsData);
+        majors.forEach(m => {
+            let option = document.createElement("option");
+            option.value = m;
+            option.textContent = m;
             programSelect.appendChild(option);
         });
+    } else {
+        programSelect.disabled = true;
     }
 }
 
 function updateModalPrograms() {
     const deptSelect = document.getElementById("modal_department");
     const programSelect = document.getElementById("modal_program");
-    const yearContainer = document.getElementById("modal_year_level_container");
+    const yearSelect = document.getElementById("modal_year_level");
     const majorContainer = document.getElementById("modal_major_container");
     const selectedDept = deptSelect.value;
 
     programSelect.innerHTML = '<option value="">Select Program</option>';
-    majorContainer.classList.add("d-none"); // Reset major
+    yearSelect.innerHTML = '<option value="">Select Year</option>';
+    majorContainer.classList.add("d-none");
+    programSelect.disabled = false;
 
     if (selectedDept === "BES") {
-        yearContainer.classList.add("d-none");
+        // BES Logic for Modal
+        if (schoolData["BES"]) {
+            schoolData["BES"].forEach(prog => {
+                let option = document.createElement("option");
+                option.value = prog.name;
+                option.textContent = prog.name;
+                if (prog.majors) {
+                    option.setAttribute("data-majors", JSON.stringify(prog.majors));
+                }
+                yearSelect.appendChild(option);
+            });
+        }
+        programSelect.disabled = true; // Wait for Grade 11/12 selection
     } else {
-        yearContainer.classList.remove("d-none");
-    }
+        // College Logic for Modal
+        const collegeYears = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+        collegeYears.forEach(y => {
+            let option = document.createElement("option");
+            option.value = y;
+            option.textContent = y;
+            yearSelect.appendChild(option);
+        });
 
-    if (selectedDept && schoolData[selectedDept]) {
-        schoolData[selectedDept].forEach(prog => {
-            const option = document.createElement("option");
-            option.value = prog.name;
-            option.textContent = prog.name;
-            if (prog.majors) {
-                option.setAttribute("data-majors", JSON.stringify(prog.majors));
-            }
+        if (selectedDept && schoolData[selectedDept]) {
+            schoolData[selectedDept].forEach(prog => {
+                const option = document.createElement("option");
+                option.value = prog.name;
+                option.textContent = prog.name;
+                programSelect.appendChild(option);
+            });
+        }
+    }
+}
+
+function checkBESModal() {
+    const deptSelect = document.getElementById("modal_department");
+    if (deptSelect.value !== "BES") return;
+
+    const yearSelect = document.getElementById("modal_year_level");
+    const programSelect = document.getElementById("modal_program");
+    const selectedOption = yearSelect.options[yearSelect.selectedIndex];
+    const majorsData = selectedOption.getAttribute("data-majors");
+
+    programSelect.innerHTML = '<option value="">Select Track</option>';
+
+    if (majorsData) {
+        programSelect.disabled = false;
+        const majors = JSON.parse(majorsData);
+        majors.forEach(m => {
+            let option = document.createElement("option");
+            option.value = m;
+            option.textContent = m;
             programSelect.appendChild(option);
         });
+    } else {
+        programSelect.disabled = true;
     }
 }
 
@@ -533,7 +746,15 @@ function toggleModalRole() {
 
 document.addEventListener("DOMContentLoaded", function() {
     updatePrograms();
-    // Sticky Program Filter
+    
+    // Sticky Year Filter
+    const currentYear = "{{ request.GET.year_level|default_if_none:''|escapejs }}";
+    if (currentYear) {
+        document.getElementById("yearLevelSelect").value = currentYear;
+        checkBESFilter(); // Trigger track population for BES if Grade 11/12 is selected
+    }
+
+    // Sticky Program Filter (Must run AFTER checkBESFilter populates options)
     const currentProgram = "{{ request.GET.program|default_if_none:''|escapejs }}";
     if (currentProgram) {
         document.getElementById("programSelect").value = currentProgram;
@@ -566,13 +787,28 @@ function openEditModal(button) {
     
     toggleModalRole(); // Apply role-based UI logic
 
-    // Set values AFTER toggleModalRole has populated the dropdowns
-    document.getElementById('modal_program').value = prog; 
+    // --- INTELLIGENT DATA MAPPING FOR BES ---
+    // If BES, we need to handle old data (where Grade was in Program) vs new UI (Grade in Year)
+    if (dept === "BES") {
+        // Check if the 'prog' variable looks like a Grade (Old Data)
+        if (prog.includes("Grade") || prog.includes("Kinder") || prog.includes("Nursery")) {
+            document.getElementById('modal_year_level').value = prog; // Put Grade into Year dropdown
+            checkBESModal(); // Trigger track population
+            document.getElementById('modal_program').value = major; // Put Track into Program dropdown
+        } else {
+            // New Data format
+            document.getElementById('modal_year_level').value = year;
+            checkBESModal();
+            document.getElementById('modal_program').value = prog;
+        }
+    } else {
+        // Standard College Logic
+        document.getElementById('modal_program').value = prog;
+        document.getElementById('modal_year_level').value = year;
+    }
     
     checkModalMajors(); // Now check majors based on the set program
     document.getElementById('modal_major').value = major; 
-    
-    document.getElementById('modal_year_level').value = year;
 
     const form = document.getElementById('editForm');
     form.action = "/update-patron/" + id + "/";
