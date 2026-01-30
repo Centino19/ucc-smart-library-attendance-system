@@ -8,3 +8,4 @@ db.sqlite3
 # IDE settings
 .idea/
 .vscode/
+.env

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import socket
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,8 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+# Load environment variables from .env file
+load_dotenv()
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@i0*x^5vio4(38cw0lmyp!@pucg@=y@_j(0+=&r&_b0mq2swsg'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-@i0*x^5vio4(38cw0lmyp!@pucg@=y@_j(0+=&r&_b0mq2swsg')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -159,5 +164,5 @@ EMAIL_USE_TLS = True
 
 # REPLACE WITH YOUR REAL INFO
 EMAIL_HOST_USER = 'libraryucc2026@gmail.com'  # <--- Put your actual Gmail address here
-EMAIL_HOST_PASSWORD = 'REMOVED_CREDENTIAL'      # <--- Paste the 16-char App Password here (spaces don't matter)
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
