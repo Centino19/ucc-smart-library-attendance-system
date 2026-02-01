@@ -141,15 +141,23 @@
 
         <div class="card p-4 mb-4 border-0 shadow-sm rounded-4">
             <form method="get" class="row g-3">
-                    <div class="col-md-2">
+                    <div class="col-md">
                         <label class="form-label small fw-bold text-muted">Search</label>
-                        <input type="text" name="q" class="form-control" placeholder="Name or ID..." value="{{ request.GET.q }}">
+                        <div class="position-relative">
+                            <input type="text" name="q" id="searchInput" class="form-control" style="padding-right: 80px;" placeholder="Name or ID Number..." value="{{ request.GET.q }}" oninput="toggleClearButton()">
+                            <button type="button" id="clearSearchBtn" class="btn position-absolute top-50 translate-middle-y border-0 bg-transparent p-0 text-muted" style="right: 45px; display: none;" onclick="clearSearch()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button type="submit" class="btn position-absolute top-50 end-0 translate-middle-y border-0 p-0 me-1 d-flex align-items-center justify-content-center shadow-sm" style="background-color: var(--primary-green); color: white; width: 32px; height: 32px; border-radius: 5px;" title="Search">
+                                <i class="fas fa-search" style="font-size: 0.8rem;"></i>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-auto">
                         <label class="form-label small fw-bold text-muted">Role</label>
                         <select name="role" class="form-select">
-                            <option value="">All Roles</option>
+                            <option value="">All</option>
                             {% for code, name in roles %}
                                 <option value="{{ code }}" {% if request.GET.role == code %}selected{% endif %}>{{ name }}</option>
                             {% endfor %}
@@ -166,10 +174,10 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
-                        <label class="form-label small fw-bold text-muted">Year Level</label>
+                    <div class="col-md-auto">
+                        <label class="form-label small fw-bold text-muted">Year</label>
                         <select name="year_level" id="yearLevelSelect" class="form-select" onchange="checkBESFilter()">
-                            <option value="">All Levels</option>
+                            <option value="">All</option>
                         </select>
                     </div>
 
@@ -180,7 +188,7 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-md-auto d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--primary-green); border: none;">
                             <i class="fas fa-filter me-2"></i> Apply
                         </button>
@@ -514,7 +522,7 @@ function updatePrograms() {
     const selectedDept = deptSelect.value;
 
     programSelect.innerHTML = '<option value="">All Programs</option>';
-    yearSelect.innerHTML = '<option value="">All Levels</option>';
+    yearSelect.innerHTML = '<option value="">All</option>';
     yearSelect.disabled = false;
     programSelect.disabled = false;
 
@@ -758,7 +766,23 @@ document.addEventListener("DOMContentLoaded", function() {
     if (currentProgram) {
         document.getElementById("programSelect").value = currentProgram;
     }
+
+    // Initialize Clear Button visibility
+    toggleClearButton();
 });
+
+function toggleClearButton() {
+    const input = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    clearBtn.style.display = input.value.length > 0 ? 'block' : 'none';
+}
+
+function clearSearch() {
+    const input = document.getElementById('searchInput');
+    input.value = '';
+    toggleClearButton();
+    input.focus();
+}
 
 function openEditModal(button) {
     // 1. Get data from button attributes
