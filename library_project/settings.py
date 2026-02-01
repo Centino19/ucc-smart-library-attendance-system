@@ -106,11 +106,11 @@ WSGI_APPLICATION = 'library_project.wsgi.application'
 DATABASES = {
      'default': {
          'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'library_db',       # The name you gave in pgAdmin
-         'USER': 'postgres',         # Default username
-         'PASSWORD': '1234',# The password you set during installation
-         'HOST': 'localhost',
-         'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'library_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', '1234'), # Loads from .env, falls back to '1234' if missing
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
      }
  }
 
@@ -161,8 +161,35 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 
-# REPLACE WITH YOUR REAL INFO
-EMAIL_HOST_USER = 'libraryucc2026@gmail.com'  # <--- Put your actual Gmail address here
+# Credentials from .env (Make sure these are your GMAIL credentials)
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# --- LOGGING CONFIGURATION ---
+# This saves errors to a file named 'debug.log' in your project folder.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'INFO',
+    },
+}
