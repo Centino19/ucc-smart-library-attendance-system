@@ -701,7 +701,7 @@ def bulk_import(request):
             "AB": "Bachelor of Arts",
 
             # GS
-            "MAEd": "Master of Arts in Education",
+            "MAED": "Master of Arts in Education",
             "MAE": "Master of Arts in Education",
             "MAN": "Master of Arts in Nursing",
 
@@ -712,9 +712,9 @@ def bulk_import(request):
             "G4": "Grade 4", "G5": "Grade 5", "G6": "Grade 6",
             "G7": "Grade 7", "G8": "Grade 8", "G9": "Grade 9",
             "G10": "Grade 10",
-            "G11": "Grade 11",
-            "G12": "Grade 12",
-            "SHS": "Grade 11" # Fallback if just SHS is used
+            "1": "Grade 11",
+            "2": "Grade 12",
+            "SHS": "Grade 11",
         }
 
         YEAR_MAP = {
@@ -743,9 +743,22 @@ def bulk_import(request):
 
                 raw_program = row.get('Course', '').strip()
                 program = ACRONYM_MAP.get(raw_program, raw_program)
+                major = ""
 
                 raw_year = row.get('Year', '').strip()
                 year_level = YEAR_MAP.get(raw_year, raw_year)
+
+                # Special Logic for BES Senior High (STEM, ABM, etc.)
+                # 1 -> Grade 11, 2 -> Grade 12
+                if selected_dept == 'BES' and raw_program.upper() in ["STEM", "ABM", "HUMSS", "GAS", "TVL"]:
+                    if raw_year == '1':
+                        program = "Grade 11"
+                        year_level = "Grade 11"
+                    elif raw_year == '2':
+                        program = "Grade 12"
+                        year_level = "Grade 12"
+                    
+                    major = f"Academic Track: {raw_program.upper()}"
 
                 raw_email = row.get('Email', '').strip()
                 if raw_email and raw_email.lower() != 'nan':
@@ -760,6 +773,7 @@ def bulk_import(request):
                         'middle_name': middle_name,
                         'last_name': last_name,
                         'program': program,
+                        'major': major,
                         'year_level': year_level,
                         'email': email,
                         'role': 'student',
