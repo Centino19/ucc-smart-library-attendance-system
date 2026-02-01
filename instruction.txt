@@ -61,7 +61,5 @@ When uploading students via CSV, ensure the file has these headers:
 When you pull new code from GitHub to the Library PC:
 1. Close the running server.
 2. Run: git pull
-3. Run: pip install -r requirements.txt
-4. Run: python manage.py collectstatic --noinput
-5. Run: python manage.py migrate
-6. Start the server again.
+3. Run: python manage.py migrate (Only if you changed the database structure)
+4. Start the server again.
