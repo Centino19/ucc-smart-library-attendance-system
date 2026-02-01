@@ -549,26 +549,35 @@ SCHOOL_DATA = {
 def print_pdf(request):
     default_year = timezone.now().year
     selected_year = int(request.GET.get('year', default_year))
-    selected_sem = request.GET.get('sem', '1')
+    report_type = request.GET.get('type', 'yearly')
 
-    if selected_sem == '1':
-        months_map = {8: selected_year, 9: selected_year, 10: selected_year, 11: selected_year, 12: selected_year}
-        display_name = f"1st Semester, A.Y. {selected_year}-{selected_year + 1}"
-        month_names = ["August", "September", "October", "November", "December"]
+    if report_type == 'monthly':
+        # Monthly Report
+        selected_month = int(request.GET.get('month', timezone.now().month))
+        month_name = calendar.month_name[selected_month]
+        display_name = f"Monthly Attendance Report - {month_name} {selected_year}"
+        
+        months_map = {selected_month: selected_year}
+        month_names = [month_name]
     else:
-        next_year = selected_year + 1
-        months_map = {12: selected_year, 1: next_year, 2: next_year, 3: next_year, 4: next_year, 5: next_year}
-        display_name = f"2nd Semester, A.Y. {selected_year}-{selected_year + 1}"
-        month_names = ["December", "January", "February", "March", "April", "May"]
+        # Yearly Report (Default)
+        display_name = f"Annual Attendance Report - {selected_year}"
+        # Map 1-12 to the selected year
+        months_map = {i: selected_year for i in range(1, 13)}
+        # Use abbreviated months (Jan, Feb) to fit in PDF
+        month_names = [calendar.month_abbr[i] for i in range(1, 13)]
 
     report_data = {}
 
     for dept_code, programs_list in SCHOOL_DATA.items():
         dept_data = {}
+        # Initialize totals: 1 per month + 1 for the row total
+        totals = [0] * (len(months_map) + 1)
+
         for prog in programs_list:
             monthly_counts = []
             total_prog = 0
-            for month_num, year_num in months_map.items():
+            for i, (month_num, year_num) in enumerate(months_map.items()):
                 count = AttendanceLog.objects.filter(
                     scan_time__month=month_num,
                     scan_time__year=year_num,
@@ -577,9 +586,17 @@ def print_pdf(request):
                 ).count()
                 monthly_counts.append(count)
                 total_prog += count
+                totals[i] += count  # Add to column total
+
             monthly_counts.append(total_prog)
+            totals[-1] += total_prog  # Add to grand total
             dept_data[prog] = monthly_counts
-        report_data[dept_code] = dept_data
+        
+        # Only show totals if there is more than 1 program (Excludes SHES)
+        report_data[dept_code] = {
+            'programs': dept_data,
+            'totals': totals if len(programs_list) > 1 else None
+        }
 
     context = {
         'display_name': display_name,
@@ -635,7 +652,8 @@ def scan_history(request):
     date_end = request.GET.get('date_end')
     query_id = request.GET.get('q_id')
 
-    logs = AttendanceLog.objects.all().order_by('-scan_time')
+    # Optimize query: Fetch patron details in the same query to avoid N+1 problem
+    logs = AttendanceLog.objects.select_related('patron').order_by('-scan_time')
 
     if date_start:
         logs = logs.filter(scan_time__date__gte=date_start)
@@ -644,11 +662,22 @@ def scan_history(request):
     if query_id:
         logs = logs.filter(patron__id_number__icontains=query_id)
 
+    # --- PAGINATION ---
+    paginator = Paginator(logs, 50)  # Show 50 logs per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Preserve filters for pagination links
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
     context = {
-        'logs': logs,
+        'logs': page_obj,
         'filter_start': date_start,
         'filter_end': date_end,
-        'filter_id': query_id
+        'filter_id': query_id,
+        'query_params': query_params.urlencode(),
     }
     return render(request, 'library_app/history.html', context)
 

@@ -103,35 +103,49 @@
 
     <div class="main-content">
         <div class="w-100" style="max-width: 600px;">
+            <h2 class="fw-bold text-dark mb-4 text-center">Generate PDF Reports</h2>
 
             <div class="card shadow rounded-4 border-0">
-                <div class="card-header text-white py-3 rounded-top-4 text-center" style="background-color: var(--primary-green);">
-                    <h5 class="mb-0 fw-bold"><i class="fas fa-print me-2"></i> Generate Attendance Report</h5>
-                </div>
-
                 <div class="card-body p-5">
-                    <form action="{% url 'print_pdf' %}" method="GET" target="_blank">
+                    <form action="{% url 'print_pdf' %}" method="GET" target="_blank" id="reportForm">
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold text-muted">Select Semester</label>
-                            <select name="sem" class="form-select form-select-lg">
-                                <option value="1">1st Semester (Aug - Dec)</option>
-                                <option value="2">2nd Semester (Dec - May)</option>
+                        <div class="mb-4 text-center">
+                            <label class="form-label fw-bold text-muted d-block mb-3">Select Report Type</label>
+                            <div class="btn-group w-100" role="group" aria-label="Report Type">
+                                <input type="radio" class="btn-check" name="type" id="typeYearly" value="yearly" checked onchange="toggleInputs()">
+                                <label class="btn btn-outline-success py-3 fw-bold" for="typeYearly">
+                                    <i class="fas fa-calendar-alt me-2"></i> Yearly
+                                </label>
+
+                                <input type="radio" class="btn-check" name="type" id="typeMonthly" value="monthly" onchange="toggleInputs()">
+                                <label class="btn btn-outline-success py-3 fw-bold" for="typeMonthly">
+                                    <i class="fas fa-calendar-day me-2"></i> Monthly
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="monthGroup" style="display: none;">
+                            <label class="form-label fw-bold text-muted">Select Month</label>
+                            <select name="month" id="monthSelect" class="form-select form-select-lg">
+                                <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+                                <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+                                <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+                                <option value="10">October</option><option value="11">November</option><option value="12">December</option>
                             </select>
                         </div>
 
-                        <div class="mb-5">
-                            <label class="form-label fw-bold text-muted">Academic Year Start</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="fas fa-calendar-alt text-muted"></i></span>
-                                <input type="number" name="year" class="form-control form-control-lg" value="2025" min="2020" max="2030">
-                            </div>
-                            <div class="form-text mt-2 ms-1"><i class="fas fa-info-circle me-1"></i> Example: Enter <strong>2025</strong> for School Year 2025-2026.</div>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted">Select Year</label>
+                            <input type="number" name="year" id="yearInput" class="form-control form-control-lg" value="{% now 'Y' %}" min="2020" max="2030">
+                        </div>
+
+                        <div class="alert alert-info text-center small mb-4">
+                            Report will cover: <strong id="datePreview"></strong>
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-lg text-white fw-bold py-3" style="background-color: var(--primary-green);">
-                                <i class="fas fa-file-pdf me-2"></i> Generate PDF Report
+                                <i class="fas fa-file-pdf me-2"></i> Generate PDF
                             </button>
                         </div>
 
@@ -145,5 +159,39 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const monthGroup = document.getElementById('monthGroup');
+        const monthSelect = document.getElementById('monthSelect');
+        const yearInput = document.getElementById('yearInput');
+        const preview = document.getElementById('datePreview');
+
+        // Set current month as default
+        const currentMonth = new Date().getMonth() + 1;
+        if(monthSelect) monthSelect.value = currentMonth;
+
+        window.toggleInputs = function() {
+            // Get value from checked radio button
+            const type = document.querySelector('input[name="type"]:checked').value;
+            const year = yearInput.value;
+
+            if (type === 'monthly') {
+                monthGroup.style.display = 'block';
+                const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+                preview.textContent = `${monthName} ${year}`;
+            } else {
+                monthGroup.style.display = 'none';
+                preview.textContent = `January ${year} - December ${year}`;
+            }
+        };
+
+        // Event Listeners
+        monthSelect.addEventListener('change', toggleInputs);
+        yearInput.addEventListener('input', toggleInputs);
+
+        // Initial Call
+        toggleInputs();
+    });
+</script>
 </body>
 </html>

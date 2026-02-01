@@ -17,6 +17,9 @@
             margin-bottom: 20px;
             border-bottom: 2px solid #0B3D2E;
         }
+        .header-table td {
+            vertical-align: middle;
+        }
         .logo {
             width: 80px;
             height: auto;
@@ -25,8 +28,9 @@
             text-align: center;
             color: #0B3D2E;
         }
-        h1 { margin: 0; font-size: 18pt; }
-        h2 { margin: 5px 0; font-size: 14pt; font-weight: normal; }
+        h1 { margin: 0; font-size: 18pt; line-height: 1.1; }
+        h2 { margin: 2px 0; font-size: 14pt; font-weight: normal; line-height: 1.1; }
+        h3 { margin: 2px 0; font-size: 12pt; font-weight: bold; line-height: 1.1; }
 
         /* Data Table Styling */
         .data-table {
@@ -59,27 +63,59 @@
             font-weight: bold;
             background-color: #e6f7e6;
         }
+        
+        /* Signatories Styling */
+        .signatories-table {
+            width: 100%;
+            margin-top: 50px;
+            border: none;
+        }
+        .signatories-table td {
+            border: none;
+            text-align: center;
+            vertical-align: top;
+            padding-top: 30px;
+        }
+        .signatory-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid black;
+            display: inline-block;
+            min-width: 200px;
+            margin-bottom: 5px;
+        }
+        .signatory-title {
+            font-size: 9pt;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
 
     <table class="header-table">
         <tr>
-            <td style="width: 100px;">
+            <td style="width: 25%; text-align: right; padding-right: 10px;">
                 {% load static %}
-                <img src="{% static 'ucc_logo.png' %}" class="logo" alt="Logo">
+                <img src="{% static 'ucc_logo.png' %}" class="logo" alt="UCC Logo">
             </td>
-            <td class="title-section">
+            <td class="title-section" style="width: 50%;">
                 <h1>UNION CHRISTIAN COLLEGE</h1>
                 <h2>Library Attendance Summary</h2>
                 <h3>{{ display_name }}</h3>
             </td>
+            <td style="width: 25%; text-align: left; padding-left: 10px;">
+                <img src="{% static 'uccp.png' %}" class="logo" alt="UCCP Logo">
+            </td>
         </tr>
     </table>
 
-    {% for dept_code, dept_programs in report_data.items %}
+    {% for dept_code, data in report_data.items %}
 
-        {% if dept_programs %}
+        {% if dept_code == 'SEAS' or dept_code == 'BES' %}
+            <div style="page-break-before: always;"></div>
+        {% endif %}
+
+        {% if data.programs %}
             <div class="dept-header">
                 Department:
                 {% for k, v in departments.items %}
@@ -98,7 +134,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for prog_name, counts in dept_programs.items %}
+                    {% for prog_name, counts in data.programs.items %}
                     <tr>
                         <td class="prog-name">{{ prog_name }}</td>
 
@@ -109,11 +145,38 @@
                         {% endfor %}
                     </tr>
                     {% endfor %}
+
+                    {% if data.totals %}
+                    <tr style="font-weight: bold; background-color: #e6f7e6;">
+                        <td style="text-align: right;">TOTAL</td>
+                        {% for t in data.totals %}
+                            <td>{{ t }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         {% endif %}
 
     {% endfor %}
+
+    <div style="margin-top: 30px; margin-bottom: 10px; font-style: italic;">
+        Date Printed: {% now "F j, Y" %}
+    </div>
+
+    <!-- Signatories Section -->
+    <table class="signatories-table">
+        <tr>
+            <td style="width: 50%;">
+                <div class="signatory-name">Angelie P. Cabatay</div><br>
+                <span class="signatory-title">Assistant Librarian</span>
+            </td>
+            <td style="width: 50%;">
+                <div class="signatory-name">Estrellita G. Dela Cruz</div><br>
+                <span class="signatory-title">Chief Librarian</span>
+            </td>
+        </tr>
+    </table>
 
 </body>
 </html>
