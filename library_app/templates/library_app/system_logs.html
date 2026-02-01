@@ -153,6 +153,8 @@
                             <option value="Bulk Import" {% if selected_action == 'Bulk Import' %}selected{% endif %}>Bulk Import</option>
                             <option value="Resend QR" {% if selected_action == 'Resend QR' %}selected{% endif %}>Resend QR</option>
                             <option value="Print Report" {% if selected_action == 'Print Report' %}selected{% endif %}>Print Report</option>
+                            <option value="Admin Login" {% if selected_action == 'Admin Login' %}selected{% endif %}>Admin Login</option>
+                            <option value="Admin Logout" {% if selected_action == 'Admin Logout' %}selected{% endif %}>Admin Logout</option>
                         </select>
                     </div>
                     <div class="col-md-3 d-flex gap-2">
@@ -193,8 +195,8 @@
                             </td>
                             <td>
                                 <span class="badge rounded-pill 
-                                    {% if 'Delete' in log.action or 'Check-Out' in log.action %}bg-danger
-                                    {% elif 'Add' in log.action or 'Update' in log.action or 'Import' in log.action or 'Check-In' in log.action %}bg-success
+                                    {% if 'Delete' in log.action or 'Check-Out' in log.action or 'Logout' in log.action %}bg-danger
+                                    {% elif 'Add' in log.action or 'Update' in log.action or 'Import' in log.action or 'Check-In' in log.action or 'Login' in log.action %}bg-success
                                     {% else %}bg-secondary{% endif %}">
                                     {{ log.action }}
                                 </span>

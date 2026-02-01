@@ -18,6 +18,7 @@ from django.core.mail import EmailMessage
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -922,8 +923,21 @@ def export_patrons_csv(request):
 # 6. LOGOUT
 # ==========================================
 
+class CustomLoginView(LoginView):
+    template_name = 'library_app/login.html'
+
+    def form_valid(self, form):
+        # 1. Log the user in (standard Django behavior)
+        response = super().form_valid(form)
+        # 2. Record the log
+        log_action(self.request, "Admin Login", f"Admin logged in: {self.request.user.username}")
+        return response
+
 def logout_view(request):
     """Logs the user out and redirects to the login page."""
+    if request.user.is_authenticated:
+        log_action(request, "Admin Logout", f"Admin logged out: {request.user.username}")
+
     logout(request)
     messages.success(request, "You have been logged out successfully.")
     return redirect('login')

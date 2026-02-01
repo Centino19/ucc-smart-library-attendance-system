@@ -29,7 +29,7 @@ urlpatterns = [
     path('print_pdf/', views.print_pdf, name='print_pdf'),
 
     # --- Authentication ---
-    path('login/', auth_views.LoginView.as_view(template_name='library_app/login.html'), name='login'),
+    path('login/', views.CustomLoginView.as_view(), name='login'),
 
     # FIX IS HERE: Use views.logout_view instead of auth_views.LogoutView
     path('logout/', views.logout_view, name='logout'),
