@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 
 class Patron(models.Model):
@@ -57,3 +58,13 @@ class AttendanceLog(models.Model):
 
     def __str__(self):
         return f"{self.patron.last_name} - {self.scan_time}"
+
+
+class SystemLog(models.Model):
+    action_time = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=50)
+    details = models.TextField()
+
+    def __str__(self):
+        return f"{self.action} - {self.user} ({self.action_time})"

@@ -9,6 +9,7 @@ A smart, QR code-based attendance monitoring system designed for the University 
 *   **Real-Time Dashboard:** Live statistics, charts (Chart.js), and "Top 5" leaderboards.
 *   **Auto-Checkout:** Automatically closes open sessions at 5:00 PM daily to ensure data accuracy.
 *   **Manual Entry:** Fallback option for students who forgot their IDs.
+*   **Offline Mode:** Scanner works without internet access (using local assets).
 
 ### 🔹 User Management
 *   **Patron Database:** Supports College Students, Basic Education (K-12), Faculty, and Guests.
@@ -19,6 +20,7 @@ A smart, QR code-based attendance monitoring system designed for the University 
 *   **PDF Reports:** Generate professional attendance reports by Semester or Month.
 *   **Scan History:** Searchable logs with date filtering.
 *   **Data Export:** Export user lists to CSV.
+*   **System Audit Logs:** Track admin actions (Add, Edit, Delete, Print) for security.
 
 ## 🛠️ Tech Stack
 *   **Backend:** Django 6.0, Python 3.11+
@@ -47,17 +49,29 @@ A smart, QR code-based attendance monitoring system designed for the University 
     pip install -r requirements.txt
     ```
 
-4.  **Setup Database:**
+4.  **Configure Environment Variables:**
+    Create a file named `.env` in the root folder and add your secrets:
+    ```ini
+    SECRET_KEY=your_django_secret_key
+    EMAIL_HOST_USER=your_email@gmail.com
+    EMAIL_HOST_PASSWORD=your_app_password
+    # Optional DB Config (Defaults to local postgres/1234 if missing)
+    DB_NAME=library_db
+    DB_USER=postgres
+    DB_PASSWORD=your_db_password
+    ```
+
+5.  **Setup Database:**
     ```bash
     python manage.py migrate
     ```
 
-5.  **Create Admin User:**
+6.  **Create Admin User:**
     ```bash
     python manage.py createsuperuser
     ```
 
-6.  **Run the System:**
+7.  **Run the System:**
     ```bash
     # For Production (Recommended)
     python run_production.py

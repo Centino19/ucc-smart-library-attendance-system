@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Scan History | UCC Library</title>
+    <title>System Logs | UCC Library</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -64,10 +64,7 @@
         /* TABLE SPECIFIC STYLES */
         .table-responsive { border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
         .table thead th { background-color: #0B3D2E; color: white; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; border: none; }
-        .status-badge { font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; font-weight: bold; letter-spacing: 0.5px; }
-        .status-open { background-color: #d1e7dd; color: #0f5132; }
-        .status-closed { background-color: #f8d7da; color: #842029; }
-
+        
         /* PAGINATION COLORS */
         .pagination .page-link {
             color: var(--primary-green);
@@ -107,8 +104,8 @@
 
             <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Reports</div>
             <a class="nav-link" href="{% url 'report_selection' %}"><i class="fas fa-file-alt me-3"></i> <span>Print Reports</span></a>
-            <a class="nav-link active" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
-            <a class="nav-link" href="{% url 'system_logs' %}"><i class="fas fa-clipboard-list me-3"></i> <span>System Logs</span></a>
+            <a class="nav-link" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
+            <a class="nav-link active" href="{% url 'system_logs' %}"><i class="fas fa-clipboard-list me-3"></i> <span>System Logs</span></a>
         </nav>
 
         <div class="mt-4 pb-4 border-top border-secondary pt-3">
@@ -124,32 +121,42 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="fw-bold text-dark mb-1">Scan History Log</h2>
-                <p class="text-muted mb-0">View all check-in and check-out records.</p>
+                <h2 class="fw-bold text-dark mb-1">System Audit Logs</h2>
+                <p class="text-muted mb-0">Track administrative actions and system events.</p>
             </div>
             <div class="bg-white px-4 py-2 rounded-pill shadow-sm border">
-                <span class="text-muted small fw-bold text-uppercase">Total Logs</span>
+                <span class="text-muted small fw-bold text-uppercase">Total Actions</span>
                 <span class="ms-2 fw-bold text-dark fs-5">{{ logs.paginator.count }}</span>
             </div>
         </div>
 
         <div class="card mb-4 border-0 shadow-sm rounded-4">
             <div class="card-body p-4">
-                <form method="GET" class="row g-3">
+                <form method="GET" class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label fw-bold small text-muted text-uppercase">Start Date</label>
-                        <input type="date" class="form-control" name="date_start" value="{{ filter_start }}">
+                        <input type="date" class="form-control" name="date_start" value="{{ filter_start|default:'' }}">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold small text-muted text-uppercase">End Date</label>
-                        <input type="date" class="form-control" name="date_end" value="{{ filter_end }}">
+                        <input type="date" class="form-control" name="date_end" value="{{ filter_end|default:'' }}">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold small text-muted text-uppercase">Search by ID</label>
-                        <input type="text" class="form-control" name="q_id" placeholder="e.g. 2023-1234" value="{{ filter_id|default:'' }}">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Filter by Action</label>
+                        <select name="action" class="form-select">
+                            <option value="">All Actions</option>
+                            <option value="Add User" {% if selected_action == 'Add User' %}selected{% endif %}>Add User</option>
+                            <option value="Update User" {% if selected_action == 'Update User' %}selected{% endif %}>Update User</option>
+                            <option value="Delete User" {% if selected_action == 'Delete User' %}selected{% endif %}>Delete User</option>
+                            <option value="Manual Check-In" {% if selected_action == 'Manual Check-In' %}selected{% endif %}>Manual Check-In</option>
+                            <option value="Manual Check-Out" {% if selected_action == 'Manual Check-Out' %}selected{% endif %}>Manual Check-Out</option>
+                            <option value="Bulk Import" {% if selected_action == 'Bulk Import' %}selected{% endif %}>Bulk Import</option>
+                            <option value="Resend QR" {% if selected_action == 'Resend QR' %}selected{% endif %}>Resend QR</option>
+                            <option value="Print Report" {% if selected_action == 'Print Report' %}selected{% endif %}>Print Report</option>
+                        </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-2">
-                        <a href="{% url 'scan_history' %}" class="btn btn-outline-secondary" title="Reset Filters">
+                    <div class="col-md-3 d-flex gap-2">
+                        <a href="{% url 'system_logs' %}" class="btn btn-outline-secondary" title="Reset Filters">
                             <i class="fas fa-undo"></i>
                         </a>
                         <button type="submit" class="btn fw-bold w-100 text-white" style="background-color: var(--primary-green);">
@@ -165,55 +172,40 @@
                 <table class="table table-hover mb-0 align-middle">
                     <thead>
                         <tr>
-                            <th class="py-3 ps-4">Student ID</th>
-                            <th class="py-3">Name</th>
-                            <th class="py-3">Date</th>
-                            <th class="py-3">Time IN</th>
-                            <th class="py-3">Time OUT</th>
-                            <th class="py-3">Duration</th>
-                            <th class="py-3 text-center">Status</th>
+                            <th class="py-3 ps-4">Timestamp</th>
+                            <th class="py-3">Admin User</th>
+                            <th class="py-3">Action</th>
+                            <th class="py-3">Details</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for log in logs %}
                         <tr>
-                            <td class="ps-4 fw-bold text-secondary">{{ log.patron.id_number }}</td>
-                            <td>
-                                <div class="fw-bold text-dark">{{ log.patron.first_name }} {{ log.patron.last_name }}</div>
-                                <div class="small text-muted">{{ log.patron.role|capfirst }}</div>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">{{ log.action_time|date:"M d, Y" }}</div>
+                                <div class="small text-muted">{{ log.action_time|date:"h:i A" }}</div>
                             </td>
-                            <td>{{ log.scan_time|date:"M d, Y" }}</td>
-                            <td class="text-success fw-bold">{{ log.scan_time|date:"h:i A" }}</td>
-
                             <td>
-                                {% if log.time_out %}
-                                    <span class="text-danger fw-bold">{{ log.time_out|date:"h:i A" }}</span>
-                                {% else %}
-                                    <span class="text-muted">--</span>
+                                <div class="fw-bold text-dark">{{ log.user.get_full_name|default:log.user.username|default:"System" }}</div>
+                                {% if log.user.get_full_name %}
+                                    <div class="small text-muted">@{{ log.user.username }}</div>
                                 {% endif %}
                             </td>
-
                             <td>
-                                {% if log.time_out %}
-                                    <small class="text-muted">{{ log.time_out|timeuntil:log.scan_time }}</small>
-                                {% else %}
-                                    <small class="text-primary fw-bold">Active</small>
-                                {% endif %}
+                                <span class="badge rounded-pill 
+                                    {% if 'Delete' in log.action or 'Check-Out' in log.action %}bg-danger
+                                    {% elif 'Add' in log.action or 'Update' in log.action or 'Import' in log.action or 'Check-In' in log.action %}bg-success
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ log.action }}
+                                </span>
                             </td>
-
-                            <td class="text-center">
-                                {% if log.time_out %}
-                                    <span class="status-badge status-closed">COMPLETED</span>
-                                {% else %}
-                                    <span class="status-badge status-open">INSIDE</span>
-                                {% endif %}
-                            </td>
+                            <td class="text-muted">{{ log.details }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
-                                <i class="fas fa-search fa-2x mb-3 text-secondary opacity-50"></i>
-                                <p class="mb-0">No logs found matching your filters.</p>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="fas fa-clipboard-list fa-2x mb-3 text-secondary opacity-50"></i>
+                                <p class="mb-0">No logs found.</p>
                             </td>
                         </tr>
                         {% endfor %}

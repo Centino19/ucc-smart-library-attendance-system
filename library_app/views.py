@@ -28,7 +28,13 @@ from django.core.paginator import Paginator
 from xhtml2pdf import pisa
 
 # Local Imports
-from .models import Patron, AttendanceLog
+from .models import Patron, AttendanceLog, SystemLog
+
+
+def log_action(request, action, details):
+    """Helper to record system logs."""
+    if request.user.is_authenticated:
+        SystemLog.objects.create(user=request.user, action=action, details=details)
 
 
 # ==========================================
@@ -308,6 +314,7 @@ def add_patron(request):
                     email_msg.attach(filename, buffer.getvalue(), 'image/png')
                     email_msg.send(fail_silently=False)
                     messages.success(request, f"User added and QR code sent to {email}!")
+                    log_action(request, "Add User", f"Added {role}: {first_name} {last_name} ({id_number}) with Email")
 
                 except Exception as email_err:
                     print(f"Email Error: {email_err}")
@@ -315,6 +322,7 @@ def add_patron(request):
             else:
                 messages.success(request, f"Successfully added {role}: {first_name} {last_name}")
 
+            log_action(request, "Add User", f"Added {role}: {first_name} {last_name} ({id_number})")
             return redirect('patron_list')
 
         except Exception as e:
@@ -347,9 +355,20 @@ def update_patron(request, id_number):
             # Conditionally update fields based on role for data integrity
             if new_role == 'student':
                 patron.department = request.POST.get('department')
-                patron.program = request.POST.get('program')
-                patron.major = request.POST.get('major')
-                patron.year_level = request.POST.get('year_level')
+
+                if patron.department == 'BES':
+                    # BES Logic: UI sends Grade in 'year_level' and Track in 'program'
+                    # We need to swap them to match the database structure
+                    grade = request.POST.get('year_level')
+                    track = request.POST.get('program')
+                    patron.program = grade
+                    patron.year_level = grade
+                    patron.major = track
+                else:
+                    patron.program = request.POST.get('program')
+                    patron.major = request.POST.get('major')
+                    patron.year_level = request.POST.get('year_level')
+
             elif new_role == 'faculty':
                 patron.department = request.POST.get('department')
                 patron.program, patron.major, patron.year_level = "", "", ""
@@ -362,6 +381,7 @@ def update_patron(request, id_number):
 
             patron.save()
             messages.success(request, "User details updated successfully.")
+            log_action(request, "Update User", f"Updated details for {patron.first_name} {patron.last_name} ({patron.id_number})")
 
             # Check for 'HTTP_REFERER' to go back to the previous page
             referer = request.META.get('HTTP_REFERER')
@@ -382,6 +402,7 @@ def update_patron(request, id_number):
 @login_required
 def delete_patron(request, id_number):
     patron = get_object_or_404(Patron, id_number=id_number)
+    log_action(request, "Delete User", f"Deleted user {patron.first_name} {patron.last_name} ({patron.id_number})")
     patron.delete()
     messages.success(request, "User deleted successfully.")
     
@@ -419,6 +440,7 @@ def resend_qr(request, id_number):
         email_msg.attach(filename, buffer.getvalue(), 'image/png')
         email_msg.send(fail_silently=False)
         messages.success(request, f"QR Code successfully resent to {patron.email}")
+        log_action(request, "Resend QR", f"Resent QR code to {patron.id_number} ({patron.email})")
     except Exception as e:
         messages.error(request, f"Failed to send email: {e}")
 
@@ -616,6 +638,7 @@ def print_pdf(request):
     if pisa_status.err:
         return HttpResponse('We had some errors <pre>' + html + '</pre>')
 
+    log_action(request, "Print Report", f"Generated {display_name}")
     return response
 
 
@@ -639,9 +662,11 @@ def manual_checkin(request):
                 open_session.time_out = now
                 open_session.save()
                 messages.warning(request, f"CHECKED OUT: {patron.first_name} {patron.last_name}")
+                log_action(request, "Manual Check-Out", f"Processed manual check-out for {patron.id_number}")
             else:
                 AttendanceLog.objects.create(patron=patron, scan_time=now)
                 messages.success(request, f"CHECKED IN: {patron.first_name} {patron.last_name}")
+                log_action(request, "Manual Check-In", f"Processed manual check-in for {patron.id_number}")
 
     return render(request, 'library_app/manual_checkin.html')
 
@@ -680,6 +705,44 @@ def scan_history(request):
         'query_params': query_params.urlencode(),
     }
     return render(request, 'library_app/history.html', context)
+
+
+@login_required
+def system_logs(request):
+    """Displays the audit trail of admin actions."""
+    logs = SystemLog.objects.select_related('user').order_by('-action_time')
+    
+    # Date Filters
+    date_start = request.GET.get('date_start')
+    date_end = request.GET.get('date_end')
+
+    if date_start:
+        logs = logs.filter(action_time__date__gte=date_start)
+    if date_end:
+        logs = logs.filter(action_time__date__lte=date_end)
+
+    # Optional: Filter by action type
+    action_filter = request.GET.get('action')
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+
+    # --- PAGINATION ---
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
+    context = {
+        'logs': page_obj,
+        'query_params': query_params.urlencode(),
+        'selected_action': action_filter,
+        'filter_start': date_start,
+        'filter_end': date_end,
+    }
+    return render(request, 'library_app/system_logs.html', context)
 
 
 @login_required
@@ -815,6 +878,7 @@ def bulk_import(request):
                     count_updated += 1
 
             messages.success(request, f"Import Complete! Created: {count_created}, Updated: {count_updated}.")
+            log_action(request, "Bulk Import", f"Imported {count_created} new, updated {count_updated} users into {selected_dept}")
             return redirect('patron_list')
 
         except Exception as e:

@@ -90,6 +90,7 @@
             <div class="text-white-50 text-uppercase px-3 small fw-bold mt-4 mb-2 sidebar-heading" style="font-size: 0.75rem;">Reports</div>
             <a class="nav-link active" href="{% url 'report_selection' %}"><i class="fas fa-file-alt me-3"></i> <span>Print Reports</span></a>
             <a class="nav-link" href="{% url 'scan_history' %}"><i class="fas fa-history me-3"></i> <span>History Logs</span></a>
+            <a class="nav-link" href="{% url 'system_logs' %}"><i class="fas fa-clipboard-list me-3"></i> <span>System Logs</span></a>
         </nav>
 
         <div class="mt-4 pb-4 border-top border-secondary pt-3">
@@ -165,6 +166,24 @@
         const monthSelect = document.getElementById('monthSelect');
         const yearInput = document.getElementById('yearInput');
         const preview = document.getElementById('datePreview');
+
+        // --- Prevent Double Submission ---
+        const form = document.getElementById('reportForm');
+        const btn = form.querySelector('button[type="submit"]');
+
+        form.addEventListener('submit', function() {
+            const originalText = btn.innerHTML;
+            btn.style.pointerEvents = 'none'; // Disable clicks
+            btn.style.opacity = '0.7';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Generating...';
+
+            // Re-enable after 3 seconds (allows time for new tab to open)
+            setTimeout(() => {
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                btn.innerHTML = originalText;
+            }, 3000);
+        });
 
         // Set current month as default
         const currentMonth = new Date().getMonth() + 1;

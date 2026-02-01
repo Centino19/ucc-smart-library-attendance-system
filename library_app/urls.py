@@ -22,6 +22,7 @@ urlpatterns = [
     # --- Attendance & History ---
     path('manual-checkin/', views.manual_checkin, name='manual_checkin'),
     path('history/', views.scan_history, name='scan_history'),
+    path('system-logs/', views.system_logs, name='system_logs'),
 
     # --- Reports ---
     path('reports/', views.report_selection, name='report_selection'),

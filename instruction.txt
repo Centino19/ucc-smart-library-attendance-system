@@ -12,9 +12,16 @@ LIBRARY ATTENDANCE SYSTEM - SETUP & USER GUIDE
    pip install -r requirements.txt
 6. Setup the database:
    python manage.py migrate
-7. Prepare static files (CSS/Logos):
+7. Configure Security (.env):
+   - Create a file named `.env` in this folder.
+   - Open it and paste your credentials:
+     EMAIL_HOST_USER=libraryucc2026@gmail.com
+     EMAIL_HOST_PASSWORD=your_16_char_app_password
+     SECRET_KEY=any_random_text_string
+
+8. Prepare static files (CSS/Logos):
    python manage.py collectstatic
-8. Create an admin account:
+9. Create an admin account:
    python manage.py createsuperuser
 
 === PART 2: RUNNING THE SYSTEM ===
@@ -49,3 +56,12 @@ When uploading students via CSV, ensure the file has these headers:
 
 * Note: The system automatically converts acronyms (like 'BSCS') into full names.
 * Note: For Basic Ed, 'Course' can be the Grade level.
+
+=== PART 6: UPDATING THE SYSTEM ===
+When you pull new code from GitHub to the Library PC:
+1. Close the running server.
+2. Run: git pull
+3. Run: pip install -r requirements.txt
+4. Run: python manage.py collectstatic --noinput
+5. Run: python manage.py migrate
+6. Start the server again.
