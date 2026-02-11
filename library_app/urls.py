@@ -33,4 +33,8 @@ urlpatterns = [
 
     # FIX IS HERE: Use views.logout_view instead of auth_views.LogoutView
     path('logout/', views.logout_view, name='logout'),
+
+    # --- Smart Logout ---
+    path('check-active-sessions/', views.check_active_sessions, name='check_active_sessions'),
+    path('logout-checkout/', views.logout_and_checkout, name='logout_and_checkout'),
 ]

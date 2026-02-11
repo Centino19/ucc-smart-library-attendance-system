@@ -33,8 +33,8 @@ class LibraryAppConfig(AppConfig):
                 call_command('force_checkout')
 
             scheduler = BackgroundScheduler(timezone=settings.TIME_ZONE)
-            scheduler.add_job(auto_checkout_job, 'cron', hour=17, minute=00)
+            scheduler.add_job(auto_checkout_job, 'cron', hour=16, minute=45)
             scheduler.start()
-            print(f"✅ Scheduler Started: Auto-Checkout set for 5:00 PM Daily ({settings.TIME_ZONE})")
+            print(f"✅ Scheduler Started: Auto-Checkout set for 4:45 PM Daily ({settings.TIME_ZONE})")
         except Exception as e:
             print(f"Scheduler Error: {e}")

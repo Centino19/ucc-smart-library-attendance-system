@@ -933,6 +933,23 @@ class CustomLoginView(LoginView):
         log_action(self.request, "Admin Login", f"Admin logged in: {self.request.user.username}")
         return response
 
+@login_required
+def check_active_sessions(request):
+    """Returns the count of currently active (checked-in) users."""
+    count = AttendanceLog.objects.filter(time_out__isnull=True).count()
+    return JsonResponse({'count': count})
+
+@login_required
+def logout_and_checkout(request):
+    """Forces checkout for all users and then logs out the admin."""
+    from django.core.management import call_command
+    try:
+        call_command('force_checkout')
+        log_action(request, "Manual Check-Out", "Admin forced checkout of all users during logout")
+    except Exception as e:
+        print(f"Error forcing checkout: {e}")
+    return logout_view(request)
+
 def logout_view(request):
     """Logs the user out and redirects to the login page."""
     if request.user.is_authenticated:
